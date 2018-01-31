@@ -1,14 +1,19 @@
-/datum/controller/process/nanoui
-	var/tmp/datum/updateQueue/updateQueueInstance
-
 /datum/controller/process/nanoui/setup()
 	name = "nanoui"
-	schedule_interval = 10 // every 1 second
-	updateQueueInstance = new
+	schedule_interval = 20 // every 2 seconds
+
+/datum/controller/process/nanoui/statProcess()
+	..()
+	stat(null, "[GLOB.nanomanager.processing_uis.len] UIs")
 
 /datum/controller/process/nanoui/doWork()
-	updateQueueInstance.init(nanomanager.processing_uis, "process")
-	updateQueueInstance.Run()
-
-/datum/controller/process/nanoui/getStatName()
-	return ..()+"([nanomanager.processing_uis.len])"
+	for(last_object in GLOB.nanomanager.processing_uis)
+		var/datum/nanoui/NUI = last_object
+		if(istype(NUI) && !QDELETED(NUI))
+			try
+				NUI.process()
+			catch(var/exception/e)
+				catchException(e, NUI)
+		else
+			catchBadType(NUI)
+			GLOB.nanomanager.processing_uis -= NUI

@@ -23,17 +23,17 @@
 	var/l_hacking = 0
 	var/emagged = 0
 	var/open = 0
-	w_class = 3
-	max_w_class = 2
-	max_storage_space = 14
+	w_class = ITEM_SIZE_NORMAL
+	max_w_class = ITEM_SIZE_SMALL
+	max_storage_space = DEFAULT_BOX_STORAGE
 
 	examine(mob/user)
 		if(..(user, 1))
-			user << text("The service panel is [src.open ? "open" : "closed"].")
+			to_chat(user, text("The service panel is [src.open ? "open" : "closed"]."))
 
 	attackby(obj/item/weapon/W as obj, mob/user as mob)
 		if(locked)
-			if (emag_act(INFINITY, user, "You slice through the lock of \the [src]"))
+			if (istype(W, /obj/item/weapon/melee/energy/blade) && emag_act(INFINITY, user, "You slice through the lock of \the [src]"))
 				var/datum/effect/effect/system/spark_spread/spark_system = new /datum/effect/effect/system/spark_spread()
 				spark_system.set_up(5, 0, src.loc)
 				spark_system.start()
@@ -41,15 +41,15 @@
 				playsound(src.loc, "sparks", 50, 1)
 				return
 
-			if (istype(W, /obj/item/weapon/screwdriver))
-				if (do_after(user, 20))
+			if(isScrewdriver(W))
+				if (do_after(user, 20, src))
 					src.open =! src.open
 					user.show_message(text("<span class='notice'>You [] the service panel.</span>", (src.open ? "open" : "close")))
 				return
-			if ((istype(W, /obj/item/device/multitool)) && (src.open == 1)&& (!src.l_hacking))
+			if(isMultitool(W) && (src.open == 1)&& (!src.l_hacking))
 				user.show_message("<span class='notice'>Now attempting to reset internal memory, please hold.</span>", 1)
 				src.l_hacking = 1
-				if (do_after(usr, 100))
+				if (do_after(usr, 100, src))
 					if (prob(40))
 						src.l_setshort = 1
 						src.l_set = 0
@@ -119,7 +119,6 @@
 					src.code += text("[]", href_list["type"])
 					if (length(src.code) > 5)
 						src.code = "ERROR"
-			src.add_fingerprint(usr)
 			for(var/mob/M in viewers(1, src.loc))
 				if ((M.client && M.machine == src))
 					src.attack_self(M)
@@ -134,7 +133,7 @@
 		src.overlays = null
 		overlays += image('icons/obj/storage.dmi', icon_locking)
 		locked = 0
-		user << (feedback ? feedback : "You short out the lock of \the [src].")
+		to_chat(user, (feedback ? feedback : "You short out the lock of \the [src]."))
 		return 1
 
 // -----------------------------
@@ -149,16 +148,13 @@
 	force = 8.0
 	throw_speed = 1
 	throw_range = 4
-	w_class = 4.0
-
-	New()
-		..()
-		new /obj/item/weapon/paper(src)
-		new /obj/item/weapon/pen(src)
+	w_class = ITEM_SIZE_HUGE
+	max_w_class = ITEM_SIZE_NORMAL
+	max_storage_space = DEFAULT_BACKPACK_STORAGE
 
 	attack_hand(mob/user as mob)
 		if ((src.loc == user) && (src.locked == 1))
-			usr << "<span class='warning'>[src] is locked and cannot be opened!</span>"
+			to_chat(usr, "<span class='warning'>[src] is locked and cannot be opened!</span>")
 		else if ((src.loc == user) && (!src.locked))
 			src.open(usr)
 		else
@@ -168,42 +164,6 @@
 					src.close(M)
 		src.add_fingerprint(user)
 		return
-
-	//I consider this worthless but it isn't my code so whatever.  Remove or uncomment.
-	/*attack(mob/M as mob, mob/living/user as mob)
-		if ((CLUMSY in user.mutations) && prob(50))
-			user << "<span class='warning'>The [src] slips out of your hand and hits your head.</span>"
-			user.take_organ_damage(10)
-			user.Paralyse(2)
-			return
-
-		M.attack_log += text("\[[time_stamp()]\] <font color='orange'>Has been attacked with [src.name] by [user.name] ([user.ckey])</font>")
-		user.attack_log += text("\[[time_stamp()]\] <font color='red'>Used the [src.name] to attack [M.name] ([M.ckey])</font>")
-
-		log_attack("<font color='red'>[user.name] ([user.ckey]) attacked [M.name] ([M.ckey]) with [src.name] (INTENT: [uppertext(user.a_intent)])</font>")
-
-		var/t = user:zone_sel.selecting
-		if (t == "head")
-			if(ishuman(M))
-				var/mob/living/carbon/human/H = M
-				if (H.stat < 2 && H.health < 50 && prob(90))
-				// ******* Check
-					if (istype(H, /obj/item/clothing/head) && H.flags & 8 && prob(80))
-						H << "<span class='warning'>The helmet protects you from being hit hard in the head!</span>"
-						return
-					var/time = rand(2, 6)
-					if (prob(75))
-						H.Paralyse(time)
-					else
-						H.Stun(time)
-					if(H.stat != 2)	H.stat = 1
-					for(var/mob/O in viewers(H, null))
-						O.show_message(text("<span class='warning'><B>[] has been knocked unconscious!</B></span>", H), 1, "<span class='warning'>You hear someone fall.</span>", 2)
-				else
-					H << text("<span class='warning'>[] tried to knock you unconcious!</span>",user)
-					H.eye_blurry += 3
-
-		return*/
 
 // -----------------------------
 //        Secure Safe
@@ -217,8 +177,9 @@
 	icon_locking = "safeb"
 	icon_sparking = "safespark"
 	force = 8.0
-	w_class = 8.0
-	max_w_class = 8
+	w_class = ITEM_SIZE_NO_CONTAINER
+	max_w_class = ITEM_SIZE_HUGE
+	max_storage_space = 56
 	anchored = 1.0
 	density = 0
 	cant_hold = list(/obj/item/weapon/storage/secure/briefcase)

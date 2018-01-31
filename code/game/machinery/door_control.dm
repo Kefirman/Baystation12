@@ -2,7 +2,7 @@
 	name = "remote object control"
 	desc = "It controls objects, remotely."
 	icon = 'icons/obj/stationobjs.dmi'
-	icon_state = "doorctrl0"
+	icon_state = "doorctrl"
 	power_channel = ENVIRON
 	var/desiredstate = 0
 	var/exposedwires = 0
@@ -21,25 +21,9 @@
 	if(wires & 2)
 		return src.attack_hand(user)
 	else
-		user << "Error, no route to host."
+		to_chat(user, "Error, no route to host.")
 
 /obj/machinery/button/remote/attackby(obj/item/weapon/W, mob/user as mob)
-	/* For later implementation
-	if (istype(W, /obj/item/weapon/screwdriver))
-	{
-		if(wiresexposed)
-			icon_state = "doorctrl0"
-			wiresexposed = 0
-
-		else
-			icon_state = "doorctrl-open"
-			wiresexposed = 1
-
-		return
-	}
-	*/
-	if(istype(W, /obj/item/device/detective_scanner))
-		return
 	return src.attack_hand(user)
 
 /obj/machinery/button/remote/emag_act(var/remaining_charges, var/mob/user)
@@ -53,34 +37,29 @@
 	if(..())
 		return
 
-	src.add_fingerprint(user)
 	if(stat & (NOPOWER|BROKEN))
 		return
 
 	if(!allowed(user) && (wires & 1))
-		user << "<span class='warning'>Access Denied</span>"
-		flick("doorctrl-denied",src)
+		to_chat(user, "<span class='warning'>Access Denied</span>")
+		flick("[initial(icon_state)]-denied",src)
 		return
 
 	use_power(5)
-	icon_state = "doorctrl1"
+	icon_state = "[initial(icon_state)]1"
 	desiredstate = !desiredstate
-	trigger()
+	trigger(user)
 	spawn(15)
 		update_icon()
 
 /obj/machinery/button/remote/proc/trigger()
 	return
 
-/obj/machinery/button/remote/power_change()
-	..()
-	update_icon()
-
 /obj/machinery/button/remote/update_icon()
 	if(stat & NOPOWER)
-		icon_state = "doorctrl-p"
+		icon_state = "[initial(icon_state)]-p"
 	else
-		icon_state = "doorctrl0"
+		icon_state = "[initial(icon_state)]"
 
 /*
 	Airlock remote control
@@ -149,6 +128,7 @@
 /obj/machinery/button/remote/blast_door
 	name = "remote blast door-control"
 	desc = "It controls blast doors, remotely."
+	icon_state = "blastctrl"
 
 /obj/machinery/button/remote/blast_door/trigger()
 	for(var/obj/machinery/door/blast/M in world)
@@ -186,10 +166,11 @@
 	icon_state = "launcherbtt"
 
 /obj/machinery/button/remote/driver/trigger(mob/user as mob)
+	set waitfor = 0
 	active = 1
 	update_icon()
 
-	for(var/obj/machinery/door/blast/M in machines)
+	for(var/obj/machinery/door/blast/M in SSmachines.machinery)
 		if (M.id == src.id)
 			spawn( 0 )
 				M.open()
@@ -197,13 +178,13 @@
 
 	sleep(20)
 
-	for(var/obj/machinery/mass_driver/M in machines)
+	for(var/obj/machinery/mass_driver/M in SSmachines.machinery)
 		if(M.id == src.id)
 			M.drive()
 
 	sleep(50)
 
-	for(var/obj/machinery/door/blast/M in machines)
+	for(var/obj/machinery/door/blast/M in SSmachines.machinery)
 		if (M.id == src.id)
 			spawn(0)
 				M.close()

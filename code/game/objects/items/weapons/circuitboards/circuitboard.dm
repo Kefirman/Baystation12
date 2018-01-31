@@ -12,8 +12,8 @@
 	origin_tech = list(TECH_DATA = 2)
 	density = 0
 	anchored = 0
-	w_class = 2.0
-	flags = CONDUCT
+	w_class = ITEM_SIZE_SMALL
+	obj_flags = OBJ_FLAG_CONDUCTIBLE
 	force = 5.0
 	throwforce = 5.0
 	throw_speed = 3

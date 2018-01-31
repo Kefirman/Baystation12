@@ -5,7 +5,7 @@
 	desc = "A folded bag designed for the storage and transportation of cadavers."
 	icon = 'icons/obj/bodybag.dmi'
 	icon_state = "bodybag_folded"
-	w_class = 2.0
+	w_class = ITEM_SIZE_SMALL
 
 	attack_self(mob/user)
 		var/obj/structure/closet/body_bag/R = new /obj/structure/closet/body_bag(user.loc)
@@ -39,7 +39,7 @@
 	close_sound = 'sound/items/zip.ogg'
 	var/item_path = /obj/item/bodybag
 	density = 0
-	storage_capacity = (default_mob_size * 2) - 1
+	storage_capacity = (MOB_MEDIUM * 2) - 1
 	var/contains_body = 0
 
 /obj/structure/closet/body_bag/attackby(W as obj, mob/user as mob)
@@ -58,10 +58,18 @@
 			src.name = "body bag"
 	//..() //Doesn't need to run the parent. Since when can fucking bodybags be welded shut? -Agouri
 		return
-	else if(istype(W, /obj/item/weapon/wirecutters))
-		user << "You cut the tag off the bodybag"
+	else if(isWirecutter(W))
 		src.name = "body bag"
 		src.overlays.Cut()
+		to_chat(user, "You cut the tag off \the [src].")
+		return
+	else if(istype(W, /obj/item/device/healthanalyzer/) && !opened)
+		if(contains_body)
+			var/obj/item/device/healthanalyzer/HA = W
+			for(var/mob/living/L in contents)
+				HA.scan_mob(L, user)
+		else
+			to_chat(user, "\The [W] reports that \the [src] is empty.")
 		return
 
 /obj/structure/closet/body_bag/store_mobs(var/stored_units)
@@ -70,21 +78,22 @@
 
 /obj/structure/closet/body_bag/close()
 	if(..())
-		density = 0
+		set_density(0)
 		return 1
 	return 0
+
+/obj/structure/closet/body_bag/proc/fold(var/user)
+	if(!ishuman(user))	return 0
+	if(opened)	return 0
+	if(contents.len)	return 0
+	visible_message("[user] folds up the [name]")
+	. = new item_path(get_turf(src))
+	qdel(src)
 
 /obj/structure/closet/body_bag/MouseDrop(over_object, src_location, over_location)
 	..()
 	if((over_object == usr && (in_range(src, usr) || usr.contents.Find(src))))
-		if(!ishuman(usr))	return
-		if(opened)	return 0
-		if(contents.len)	return 0
-		visible_message("[usr] folds up the [src.name]")
-		new item_path(get_turf(src))
-		spawn(0)
-			qdel(src)
-		return
+		fold(usr)
 
 /obj/structure/closet/body_bag/update_icon()
 	if(opened)
@@ -94,42 +103,3 @@
 			icon_state = "bodybag_closed1"
 		else
 			icon_state = icon_closed
-
-
-/obj/item/bodybag/cryobag
-	name = "stasis bag"
-	desc = "A folded, non-reusable bag designed to prevent additional damage to an occupant at the cost of genetic damage."
-	icon = 'icons/obj/cryobag.dmi'
-	icon_state = "bodybag_folded"
-
-	attack_self(mob/user)
-		var/obj/structure/closet/body_bag/cryobag/R = new /obj/structure/closet/body_bag/cryobag(user.loc)
-		R.add_fingerprint(user)
-		qdel(src)
-
-
-
-/obj/structure/closet/body_bag/cryobag
-	name = "stasis bag"
-	desc = "A non-reusable plastic bag designed to prevent additional damage to an occupant at the cost of genetic damage."
-	icon = 'icons/obj/cryobag.dmi'
-	item_path = /obj/item/bodybag/cryobag
-	store_misc = 0
-	store_items = 0
-	var/used = 0
-
-/obj/structure/closet/body_bag/cryobag/open()
-	. = ..()
-	if(used)
-		var/obj/item/O = new/obj/item(src.loc)
-		O.name = "used stasis bag"
-		O.icon = src.icon
-		O.icon_state = "bodybag_used"
-		O.desc = "Pretty useless now.."
-		qdel(src)
-
-/obj/structure/closet/body_bag/cryobag/MouseDrop(over_object, src_location, over_location)
-	if((over_object == usr && (in_range(src, usr) || usr.contents.Find(src))))
-		if(!ishuman(usr))	return
-		usr << "<span class='warning'>You can't fold that up anymore..</span>"
-	..()

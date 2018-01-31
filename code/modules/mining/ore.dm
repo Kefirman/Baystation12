@@ -1,78 +1,86 @@
 /obj/item/weapon/ore
-	name = "rock"
+	name = "small rock"
 	icon = 'icons/obj/mining.dmi'
 	icon_state = "ore2"
-	w_class = 2
+	randpixel = 8
+	w_class = ITEM_SIZE_SMALL
 	var/datum/geosample/geologic_data
-	var/material
+	var/ore/ore = null // set to a type to find the right instance on init
 
-/obj/item/weapon/ore/uranium
-	name = "pitchblende"
-	icon_state = "ore_uranium"
-	origin_tech = list(TECH_MATERIAL = 5)
-	material = "uranium"
+/obj/item/weapon/ore/Initialize()
+	. = ..()
+	if(ispath(ore))
+		ensure_ore_data_initialised()
+		ore = ores_by_type[ore]
+		if(ore.ore != type)
+			log_error("[src] ([src.type]) had ore type [ore.type] but that type does not have [src.type] set as its ore item!")
+		update_ore()
 
-/obj/item/weapon/ore/iron
-	name = "hematite"
-	icon_state = "ore_iron"
-	origin_tech = list(TECH_MATERIAL = 1)
-	material = "hematite"
+/obj/item/weapon/ore/proc/update_ore()
+	name = ore.display_name
+	icon_state = "ore_[ore.icon_tag]"
+	origin_tech = ore.origin_tech.Copy()
 
-/obj/item/weapon/ore/coal
-	name = "raw carbon"
-	icon_state = "ore_coal"
-	origin_tech = list(TECH_MATERIAL = 1)
-	material = "carbon"
-
-/obj/item/weapon/ore/glass
-	name = "impure silicates"
-	icon_state = "ore_glass"
-	origin_tech = list(TECH_MATERIAL = 1)
-	material = "sand"
-
-/obj/item/weapon/ore/phoron
-	name = "phoron crystals"
-	icon_state = "ore_phoron"
-	origin_tech = list(TECH_MATERIAL = 2)
-	material = "phoron"
-
-/obj/item/weapon/ore/silver
-	name = "native silver ore"
-	icon_state = "ore_silver"
-	origin_tech = list(TECH_MATERIAL = 3)
-	material = "silver"
-
-/obj/item/weapon/ore/gold
-	name = "native gold ore"
-	icon_state = "ore_gold"
-	origin_tech = list(TECH_MATERIAL = 4)
-	material = "gold"
-
-/obj/item/weapon/ore/diamond
-	name = "diamonds"
-	icon_state = "ore_diamond"
-	origin_tech = list(TECH_MATERIAL = 6)
-	material = "diamond"
-
-/obj/item/weapon/ore/osmium
-	name = "raw platinum"
-	icon_state = "ore_platinum"
-	material = "platinum"
-
-/obj/item/weapon/ore/hydrogen
-	name = "raw hydrogen"
-	icon_state = "ore_hydrogen"
-	material = "mhydrogen"
+/obj/item/weapon/ore/Value(var/base)
+	. = ..()
+	if(!ore)
+		return
+	var/material/M
+	if(ore.smelts_to) 
+		M = get_material_by_name(ore.smelts_to)
+	else if (ore.compresses_to)
+		M = get_material_by_name(ore.compresses_to)
+	if(!istype(M))
+		return
+	return 0.5*M.value*ore.result_amount
 
 /obj/item/weapon/ore/slag
-	name = "Slag"
+	name = "slag"
 	desc = "Someone screwed up..."
 	icon_state = "slag"
-	material = null
 
-/obj/item/weapon/ore/New()
-	pixel_x = rand(0,16)-8
-	pixel_y = rand(0,8)-8
+/obj/item/weapon/ore/uranium
+	ore = /ore/uranium
+
+/obj/item/weapon/ore/iron
+	ore = /ore/hematite
+
+/obj/item/weapon/ore/coal
+	ore = /ore/coal
+
+/obj/item/weapon/ore/glass
+	ore = /ore/glass
+	slot_flags = SLOT_HOLSTER
+
+// POCKET SAND!
+/obj/item/weapon/ore/glass/throw_impact(atom/hit_atom)
+	..()
+	var/mob/living/carbon/human/H = hit_atom
+	if(istype(H) && H.has_eyes() && prob(85))
+		to_chat(H, "<span class='danger'>Some of \the [src] gets in your eyes!</span>")
+		H.eye_blind += 5
+		H.eye_blurry += 10
+		spawn(1)
+			if(istype(loc, /turf/)) qdel(src)
+
+
+/obj/item/weapon/ore/phoron
+	ore = /ore/phoron
+
+/obj/item/weapon/ore/silver
+	ore = /ore/silver
+
+/obj/item/weapon/ore/gold
+	ore = /ore/gold
+
+/obj/item/weapon/ore/diamond
+	ore = /ore/diamond
+
+/obj/item/weapon/ore/osmium
+	ore = /ore/platinum
+
+/obj/item/weapon/ore/hydrogen
+	ore = /ore/hydrogen
 
 /obj/item/weapon/ore/attackby(obj/item/weapon/W as obj, mob/user as mob)
 	if(istype(W,/obj/item/device/core_sampler))

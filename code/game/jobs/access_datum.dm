@@ -49,7 +49,7 @@
 /var/const/access_tox = 7
 /datum/access/tox
 	id = access_tox
-	desc = "R&D Lab"
+	desc = "Research Labs"
 	region = ACCESS_REGION_RESEARCH
 
 /var/const/access_tox_storage = 8
@@ -256,7 +256,12 @@
 	desc = "Quartermaster"
 	region = ACCESS_REGION_SUPPLY
 
-// /var/const/free_access_id = 43
+/var/const/access_network = 42
+/datum/access/network
+	id = access_network
+	desc = "Primary Network"
+	region = ACCESS_REGION_RESEARCH
+
 // /var/const/free_access_id = 43
 // /var/const/free_access_id = 44
 
@@ -442,12 +447,26 @@
 /var/const/access_syndicate = 150//General Syndicate Access
 /datum/access/syndicate
 	id = access_syndicate
+	desc = "Syndicate"
 	access_type = ACCESS_TYPE_SYNDICATE
 
 /*******
 * Misc *
 *******/
+/var/const/access_synth = 199
+/datum/access/synthetic
+	id = access_synth
+	desc = "Synthetic"
+	access_type = ACCESS_TYPE_NONE
+
 /var/const/access_crate_cash = 200
 /datum/access/crate_cash
 	id = access_crate_cash
+	desc = "Crate cash"
+	access_type = ACCESS_TYPE_NONE
+
+/var/const/access_merchant = 201
+/datum/access/merchant
+	id = access_merchant
+	desc = "Merchant"
 	access_type = ACCESS_TYPE_NONE

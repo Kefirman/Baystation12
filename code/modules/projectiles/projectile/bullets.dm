@@ -1,12 +1,14 @@
 /obj/item/projectile/bullet
 	name = "bullet"
 	icon_state = "bullet"
-	damage = 60
+	fire_sound = 'sound/weapons/gunshot/gunshot_strong.ogg'
+	damage = 50
 	damage_type = BRUTE
 	nodamage = 0
 	check_armour = "bullet"
 	embed = 1
 	sharp = 1
+	penetration_modifier = 1.0
 	var/mob_passthrough_check = 0
 
 	muzzle_type = /obj/effect/projectile/bullet/muzzle
@@ -21,7 +23,10 @@
 		mob_passthrough_check = 1
 	else
 		mob_passthrough_check = 0
-	return ..()
+	. = ..()
+
+	if(. == 1 && iscarbon(target_mob))
+		damage *= 0.7 //squishy mobs absorb KE
 
 /obj/item/projectile/bullet/can_embed()
 	//prevent embedding if the projectile is passing through the mob
@@ -38,11 +43,9 @@
 	if(ismob(A))
 		if(!mob_passthrough_check)
 			return 0
-		if(iscarbon(A))
-			damage *= 0.7 //squishy mobs absorb KE
 		return 1
 
-	var/chance = 0
+	var/chance = damage
 	if(istype(A, /turf/simulated/wall))
 		var/turf/simulated/wall/W = A
 		chance = round(damage/W.material.integrity*180)
@@ -52,8 +55,6 @@
 		if(D.glass) chance *= 2
 	else if(istype(A, /obj/structure/girder))
 		chance = 100
-	else if(istype(A, /obj/machinery) || istype(A, /obj/structure))
-		chance = damage
 
 	if(prob(chance))
 		if(A.opacity)
@@ -66,25 +67,37 @@
 //For projectiles that actually represent clouds of projectiles
 /obj/item/projectile/bullet/pellet
 	name = "shrapnel" //'shrapnel' sounds more dangerous (i.e. cooler) than 'pellet'
-	damage = 20
+	damage = 22.5
 	//icon_state = "bullet" //TODO: would be nice to have it's own icon state
 	var/pellets = 4			//number of pellets
-	var/range_step = 2		//effective pellet count decreases every few tiles
-	var/base_spread = 90	//lower means the pellets spread more across body parts
+	var/range_step = 2		//projectile will lose a fragment each time it travels this distance. Can be a non-integer.
+	var/base_spread = 90	//lower means the pellets spread more across body parts. If zero then this is considered a shrapnel explosion instead of a shrapnel cone
 	var/spread_step = 10	//higher means the pellets spread more across body parts with distance
 
 /obj/item/projectile/bullet/pellet/Bumped()
 	. = ..()
 	bumped = 0 //can hit all mobs in a tile. pellets is decremented inside attack_mob so this should be fine.
 
-/obj/item/projectile/bullet/pellet/attack_mob(var/mob/living/target_mob, var/distance)
+/obj/item/projectile/bullet/pellet/proc/get_pellets(var/distance)
+	var/pellet_loss = round((distance - 1)/range_step) //pellets lost due to distance
+	return max(pellets - pellet_loss, 1)
+
+/obj/item/projectile/bullet/pellet/attack_mob(var/mob/living/target_mob, var/distance, var/miss_modifier)
 	if (pellets < 0) return 1
 
-	var/pellet_loss = round((distance - 1)/range_step) //pellets lost due to distance
-	var/total_pellets = max(pellets - pellet_loss, 1)
+	var/total_pellets = get_pellets(distance)
 	var/spread = max(base_spread - (spread_step*distance), 0)
+
+	//shrapnel explosions miss prone mobs with a chance that increases with distance
+	var/prone_chance = 0
+	if(!base_spread)
+		prone_chance = max(spread_step*(distance - 2), 0)
+
 	var/hits = 0
 	for (var/i in 1 to total_pellets)
+		if(target_mob.lying && target_mob != original && prob(prone_chance))
+			continue
+
 		//pellet hits spread out across different zones, but 'aim at' the targeted zone with higher probability
 		//whether the pellet actually hits the def_zone or a different zone should still be determined by the parent using get_zone_with_miss_chance().
 		var/old_zone = def_zone
@@ -97,34 +110,70 @@
 		return 1
 	return 0
 
+/obj/item/projectile/bullet/pellet/get_structure_damage()
+	var/distance = get_dist(loc, starting)
+	return ..() * get_pellets(distance)
+
+/obj/item/projectile/bullet/pellet/Move()
+	. = ..()
+
+	//If this is a shrapnel explosion, allow mobs that are prone to get hit, too
+	if(. && !base_spread && isturf(loc))
+		for(var/mob/living/M in loc)
+			if(M.lying || !M.CanPass(src, loc, 0.5, 0)) //Bump if lying or if we would normally Bump.
+				if(Bump(M)) //Bump will make sure we don't hit a mob multiple times
+					return
+
 /* short-casing projectiles, like the kind used in pistols or SMGs */
 
 /obj/item/projectile/bullet/pistol
-	damage = 20
+	fire_sound = 'sound/weapons/gunshot/gunshot_pistol.ogg'
+	damage = 25 //9mm, .38, etc
+	armor_penetration = 13.5
 
 /obj/item/projectile/bullet/pistol/medium
-	damage = 25
+	damage = 26.5 //.45
+	armor_penetration = 14.5
 
-/obj/item/projectile/bullet/pistol/strong //revolvers and matebas
-	damage = 60
+/obj/item/projectile/bullet/pistol/medium/smg
+	fire_sound = 'sound/weapons/gunshot/gunshot_smg.ogg'
+	damage = 28 //10mm
+	armor_penetration = 18
+
+/obj/item/projectile/bullet/pistol/medium/revolver
+	fire_sound = 'sound/weapons/gunshot/gunshot_strong.ogg'
+	damage = 30 //.44 magnum or something
+
+/obj/item/projectile/bullet/pistol/strong //matebas
+	fire_sound = 'sound/weapons/gunshot/gunshot_strong.ogg'
+	damage = 60 //.50AE
+	armor_penetration = 30
+
+/obj/item/projectile/bullet/pistol/strong/revolver //revolvers
+	damage = 50 //Revolvers get snowflake bullets, to keep them relevant
+	armor_penetration = 20
 
 /obj/item/projectile/bullet/pistol/rubber //"rubber" bullets
 	name = "rubber bullet"
-	damage = 10
-	agony = 40
+	check_armour = "melee"
+	damage = 5
+	agony = 30
 	embed = 0
 	sharp = 0
+	armor_penetration = 2.5
 
 /* shotgun projectiles */
 
 /obj/item/projectile/bullet/shotgun
 	name = "slug"
-	damage = 50
-	armor_penetration = 15
+	fire_sound = 'sound/weapons/gunshot/shotgun.ogg'
+	damage = 55
+	armor_penetration = 20
 
 /obj/item/projectile/bullet/shotgun/beanbag		//because beanbags are not bullets
 	name = "beanbag"
-	damage = 20
+	check_armour = "melee"
+	damage = 25
 	agony = 60
 	embed = 0
 	sharp = 0
@@ -133,7 +182,8 @@
 //Overall less damage than slugs in exchange for more damage at very close range and more embedding
 /obj/item/projectile/bullet/pellet/shotgun
 	name = "shrapnel"
-	damage = 13
+	fire_sound = 'sound/weapons/gunshot/shotgun.ogg'
+	damage = 15
 	pellets = 6
 	range_step = 1
 	spread_step = 10
@@ -141,40 +191,54 @@
 /* "Rifle" rounds */
 
 /obj/item/projectile/bullet/rifle
-	armor_penetration = 20
+	armor_penetration = 25
 	penetrating = 1
 
-/obj/item/projectile/bullet/rifle/a762
-	damage = 25
-
 /obj/item/projectile/bullet/rifle/a556
+	fire_sound = 'sound/weapons/gunshot/gunshot3.ogg'
+	damage = 30
+
+/obj/item/projectile/bullet/rifle/a762
+	fire_sound = 'sound/weapons/gunshot/gunshot2.ogg'
 	damage = 35
+	armor_penetration = 30
 
 /obj/item/projectile/bullet/rifle/a145
+	fire_sound = 'sound/weapons/gunshot/sniper.ogg'
 	damage = 80
 	stun = 3
 	weaken = 3
 	penetrating = 5
 	armor_penetration = 80
 	hitscan = 1 //so the PTR isn't useless as a sniper weapon
+	penetration_modifier = 1.25
+
+/obj/item/projectile/bullet/rifle/a145/apds
+	damage = 75
+	penetrating = 6
+	armor_penetration = 95
+	penetration_modifier = 1.5
 
 /* Miscellaneous */
 
 /obj/item/projectile/bullet/suffocationbullet//How does this even work?
 	name = "co bullet"
-	damage = 20
+	damage = 25
 	damage_type = OXY
 
 /obj/item/projectile/bullet/cyanideround
 	name = "poison bullet"
-	damage = 40
+	damage = 45
 	damage_type = TOX
 
 /obj/item/projectile/bullet/burstbullet
 	name = "exploding bullet"
-	damage = 20
+	damage = 25
 	embed = 0
 	edge = 1
+
+/obj/item/projectile/bullet/gyro
+	fire_sound = 'sound/effects/Explosion1.ogg'
 
 /obj/item/projectile/bullet/gyro/on_hit(var/atom/target, var/blocked = 0)
 	if(isturf(target))
@@ -191,9 +255,36 @@
 /obj/item/projectile/bullet/pistol/practice
 	damage = 5
 
-/obj/item/projectile/bullet/rifle/a556/practice
+/obj/item/projectile/bullet/rifle/a762/practice
 	damage = 5
 
 /obj/item/projectile/bullet/shotgun/practice
 	name = "practice"
 	damage = 5
+
+/obj/item/projectile/bullet/pistol/cap
+	name = "cap"
+	invisibility = 101
+	fire_sound = null
+	damage_type = PAIN
+	damage = 0
+	nodamage = 1
+	embed = 0
+	sharp = 0
+
+/obj/item/projectile/bullet/pistol/cap/Process()
+	loc = null
+	qdel(src)
+
+/obj/item/projectile/bullet/rock //spess dust
+	name = "micrometeor"
+	icon_state = "rock"
+	damage = 40
+	armor_penetration = 25
+	kill_count = 255
+
+/obj/item/projectile/bullet/rock/New()
+	icon_state = "rock[rand(1,3)]"
+	pixel_x = rand(-10,10)
+	pixel_y = rand(-10,10)
+	..()

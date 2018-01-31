@@ -30,7 +30,7 @@
 		return
 
 	if(!allowed(user))
-		user << "\red Access denied."
+		to_chat(user, "<span class='warning'>Access denied.</span>")
 		return
 
 	user.set_machine(src)
@@ -44,20 +44,20 @@
 		if(!machine.ores_stored[ore] && !show_all_ores) continue
 		var/ore/O = ore_data[ore]
 		if(!O) continue
-		dat += "<tr><td width = 40><b>[capitalize(O.display_name)]</b></td><td width = 30>[machine.ores_stored[ore]]</td><td width = 100><font color='"
+		dat += "<tr><td width = 40><b>[capitalize(O.display_name)]</b></td><td width = 30>[machine.ores_stored[ore]]</td><td width = 100>"
 		if(machine.ores_processing[ore])
 			switch(machine.ores_processing[ore])
 				if(0)
-					dat += "red'>not processing"
+					dat += "<font color='red'>not processing</font>"
 				if(1)
-					dat += "orange'>smelting"
+					dat += "<font color='orange'>smelting</font>"
 				if(2)
-					dat += "blue'>compressing"
+					dat += "<font color='blue'>compressing</font>"
 				if(3)
-					dat += "gray'>alloying"
+					dat += "<font color='gray'>alloying</font>"
 		else
-			dat += "red'>not processing"
-		dat += "</font>.</td><td width = 30><a href='?src=\ref[src];toggle_smelting=[ore]'>\[change\]</a></td></tr>"
+			dat += "<font color='red'>not processing</font>"
+		dat += ".</td><td width = 30><a href='?src=\ref[src];toggle_smelting=[ore]'>\[change\]</a></td></tr>"
 
 	dat += "</table><hr>"
 	dat += "Currently displaying [show_all_ores ? "all ore types" : "only available ore types"]. <A href='?src=\ref[src];toggle_ores=1'>\[[show_all_ores ? "show less" : "show more"]\]</a></br>"
@@ -124,25 +124,23 @@
 		for(var/alloytype in typesof(/datum/alloy)-/datum/alloy)
 			alloy_data += new alloytype()
 
-	if(!ore_data || !ore_data.len)
-		for(var/oretype in typesof(/ore)-/ore)
-			var/ore/OD = new oretype()
-			ore_data[OD.name] = OD
-			ores_processing[OD.name] = 0
-			ores_stored[OD.name] = 0
+	ensure_ore_data_initialised()
+	for(var/ore in ore_data)
+		ores_processing[ore] = 0
+		ores_stored[ore] = 0
 
 	//Locate our output and input machinery.
 	spawn(5)
-		for (var/dir in cardinal)
+		for (var/dir in GLOB.cardinal)
 			src.input = locate(/obj/machinery/mineral/input, get_step(src, dir))
 			if(src.input) break
-		for (var/dir in cardinal)
+		for (var/dir in GLOB.cardinal)
 			src.output = locate(/obj/machinery/mineral/output, get_step(src, dir))
 			if(src.output) break
 		return
 	return
 
-/obj/machinery/mineral/processing_unit/process()
+/obj/machinery/mineral/processing_unit/Process()
 
 	if (!src.output || !src.input) return
 
@@ -152,8 +150,10 @@
 	for(var/i = 0,i<sheets_per_tick,i++)
 		var/obj/item/weapon/ore/O = locate() in input.loc
 		if(!O) break
-		if(!isnull(ores_stored[O.material]))
-			ores_stored[O.material]++
+		if(O.ore && !isnull(ores_stored[O.ore.name]))
+			ores_stored[O.ore.name]++
+		else
+			world.log << "[src] encountered ore [O] with oretag [O.ore ? O.ore : "(no ore)"] which this machine did not have an entry for!"
 
 		qdel(O)
 

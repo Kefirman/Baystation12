@@ -17,8 +17,8 @@
 	icon = 'icons/obj/surgery.dmi'
 	icon_state = "retractor"
 	matter = list(DEFAULT_WALL_MATERIAL = 10000, "glass" = 5000)
-	flags = CONDUCT
-	w_class = 2.0
+	obj_flags = OBJ_FLAG_CONDUCTIBLE
+	w_class = ITEM_SIZE_SMALL
 	origin_tech = list(TECH_MATERIAL = 1, TECH_BIO = 1)
 
 /*
@@ -30,8 +30,8 @@
 	icon = 'icons/obj/surgery.dmi'
 	icon_state = "hemostat"
 	matter = list(DEFAULT_WALL_MATERIAL = 5000, "glass" = 2500)
-	flags = CONDUCT
-	w_class = 2.0
+	obj_flags = OBJ_FLAG_CONDUCTIBLE
+	w_class = ITEM_SIZE_SMALL
 	origin_tech = list(TECH_MATERIAL = 1, TECH_BIO = 1)
 	attack_verb = list("attacked", "pinched")
 
@@ -44,8 +44,8 @@
 	icon = 'icons/obj/surgery.dmi'
 	icon_state = "cautery"
 	matter = list(DEFAULT_WALL_MATERIAL = 5000, "glass" = 2500)
-	flags = CONDUCT
-	w_class = 2.0
+	obj_flags = OBJ_FLAG_CONDUCTIBLE
+	w_class = ITEM_SIZE_SMALL
 	origin_tech = list(TECH_MATERIAL = 1, TECH_BIO = 1)
 	attack_verb = list("burnt")
 
@@ -59,16 +59,11 @@
 	icon_state = "drill"
 	hitsound = 'sound/weapons/circsawhit.ogg'
 	matter = list(DEFAULT_WALL_MATERIAL = 15000, "glass" = 10000)
-	flags = CONDUCT
+	obj_flags = OBJ_FLAG_CONDUCTIBLE
 	force = 15.0
-	w_class = 3
+	w_class = ITEM_SIZE_NORMAL
 	origin_tech = list(TECH_MATERIAL = 1, TECH_BIO = 1)
 	attack_verb = list("drilled")
-
-	suicide_act(mob/user)
-		viewers(user) << pick("<span class='danger'>\The [user] is pressing \the [src] to \his temple and activating it! It looks like \he's trying to commit suicide.</span>",
-		                       "<span class='danger'>\The [user] is pressing \the [src] to \his chest and activating it! It looks like \he's trying to commit suicide.</span>")
-		return (BRUTELOSS)
 
 /*
  * Scalpel
@@ -78,11 +73,11 @@
 	desc = "Cut, cut, and once more cut."
 	icon = 'icons/obj/surgery.dmi'
 	icon_state = "scalpel"
-	flags = CONDUCT
+	obj_flags = OBJ_FLAG_CONDUCTIBLE
 	force = 10.0
 	sharp = 1
 	edge = 1
-	w_class = 1
+	w_class = ITEM_SIZE_TINY
 	slot_flags = SLOT_EARS
 	throwforce = 5.0
 	throw_speed = 3
@@ -90,12 +85,6 @@
 	origin_tech = list(TECH_MATERIAL = 1, TECH_BIO = 1)
 	matter = list(DEFAULT_WALL_MATERIAL = 10000, "glass" = 5000)
 	attack_verb = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")
-
-	suicide_act(mob/user)
-		viewers(user) << pick("<span class='danger'>\The [user] is slitting \his wrists with the [src.name]! It looks like \he's trying to commit suicide.</span>", \
-		                      "<span class='danger'>\The [user] is slitting \his throat with the [src.name]! It looks like \he's trying to commit suicide.</span>", \
-		                      "<span class='danger'>\The [user] is slitting \his stomach open with the [src.name]! It looks like \he's trying to commit seppuku.</span>")
-		return (BRUTELOSS)
 
 /*
  * Researchable Scalpels
@@ -135,9 +124,9 @@
 	icon = 'icons/obj/surgery.dmi'
 	icon_state = "saw3"
 	hitsound = 'sound/weapons/circsawhit.ogg'
-	flags = CONDUCT
+	obj_flags = OBJ_FLAG_CONDUCTIBLE
 	force = 15.0
-	w_class = 3
+	w_class = ITEM_SIZE_NORMAL
 	throwforce = 9.0
 	throw_speed = 3
 	throw_range = 5
@@ -153,7 +142,7 @@
 	icon = 'icons/obj/surgery.dmi'
 	icon_state = "bone-gel"
 	force = 0
-	w_class = 2.0
+	w_class = ITEM_SIZE_SMALL
 	throwforce = 1.0
 
 /obj/item/weapon/FixOVein
@@ -163,7 +152,7 @@
 	force = 0
 	throwforce = 1.0
 	origin_tech = list(TECH_MATERIAL = 1, TECH_BIO = 3)
-	w_class = 2.0
+	w_class = ITEM_SIZE_SMALL
 	var/usage_amount = 10
 
 /obj/item/weapon/bonesetter
@@ -174,5 +163,5 @@
 	throwforce = 9.0
 	throw_speed = 3
 	throw_range = 5
-	w_class = 2.0
+	w_class = ITEM_SIZE_SMALL
 	attack_verb = list("attacked", "hit", "bludgeoned")

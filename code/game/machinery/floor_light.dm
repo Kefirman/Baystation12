@@ -5,31 +5,35 @@ var/list/floor_light_cache = list()
 	icon = 'icons/obj/machines/floor_light.dmi'
 	icon_state = "base"
 	desc = "A backlit floor panel."
-	layer = TURF_LAYER+0.001
+	plane = ABOVE_TURF_PLANE
+	layer = ABOVE_TILE_LAYER
 	anchored = 0
 	use_power = 2
 	idle_power_usage = 2
 	active_power_usage = 20
 	power_channel = LIGHT
-	matter = list(DEFAULT_WALL_MATERIAL = 2500, "glass" = 2750)
+	matter = list(DEFAULT_WALL_MATERIAL = 250, "glass" = 250)
 
 	var/on
 	var/damaged
 	var/default_light_range = 4
 	var/default_light_power = 2
-	var/default_light_colour = "#FFFFFF"
+	var/default_light_colour = "#ffffff"
+
+/obj/machinery/floor_light/prebuilt
+	anchored = 1
 
 /obj/machinery/floor_light/attackby(var/obj/item/W, var/mob/user)
-	if(istype(W, /obj/item/weapon/screwdriver))
+	if(isScrewdriver(W))
 		anchored = !anchored
 		visible_message("<span class='notice'>\The [user] has [anchored ? "attached" : "detached"] \the [src].</span>")
-	else if(istype(W, /obj/item/weapon/weldingtool) && (damaged || (stat & BROKEN)))
+	else if(isWelder(W) && (damaged || (stat & BROKEN)))
 		var/obj/item/weapon/weldingtool/WT = W
 		if(!WT.remove_fuel(0, user))
-			user << "<span class='warning'>\The [src] must be on to complete this task.</span>"
+			to_chat(user, "<span class='warning'>\The [src] must be on to complete this task.</span>")
 			return
 		playsound(src.loc, 'sound/items/Welder.ogg', 50, 1)
-		if(!do_after(user, 20))
+		if(!do_after(user, 20, src))
 			return
 		if(!src || !WT.isOn())
 			return
@@ -43,7 +47,7 @@ var/list/floor_light_cache = list()
 
 /obj/machinery/floor_light/attack_hand(var/mob/user)
 
-	if(user.a_intent == "hurt" && !user.small)
+	if(user.a_intent == I_HURT && !issmall(user))
 		if(!isnull(damaged) && !(stat & BROKEN))
 			visible_message("<span class='danger'>\The [user] smashes \the [src]!</span>")
 			playsound(src, "shatter", 70, 1)
@@ -57,15 +61,15 @@ var/list/floor_light_cache = list()
 	else
 
 		if(!anchored)
-			user << "<span class='warning'>\The [src] must be screwed down first.</span>"
+			to_chat(user, "<span class='warning'>\The [src] must be screwed down first.</span>")
 			return
 
 		if(stat & BROKEN)
-			user << "<span class='warning'>\The [src] is too damaged to be functional.</span>"
+			to_chat(user, "<span class='warning'>\The [src] is too damaged to be functional.</span>")
 			return
 
 		if(stat & NOPOWER)
-			user << "<span class='warning'>\The [src] is unpowered.</span>"
+			to_chat(user, "<span class='warning'>\The [src] is unpowered.</span>")
 			return
 
 		on = !on
@@ -74,7 +78,7 @@ var/list/floor_light_cache = list()
 		update_brightness()
 		return
 
-/obj/machinery/floor_light/process()
+/obj/machinery/floor_light/Process()
 	..()
 	var/need_update
 	if((!anchored || broken()) && on)
@@ -107,6 +111,7 @@ var/list/floor_light_cache = list()
 			if(!floor_light_cache[cache_key])
 				var/image/I = image("on")
 				I.color = default_light_colour
+				I.plane = plane
 				I.layer = layer+0.001
 				floor_light_cache[cache_key] = I
 			overlays |= floor_light_cache[cache_key]
@@ -117,6 +122,7 @@ var/list/floor_light_cache = list()
 			if(!floor_light_cache[cache_key])
 				var/image/I = image("flicker[damaged]")
 				I.color = default_light_colour
+				I.plane = plane
 				I.layer = layer+0.001
 				floor_light_cache[cache_key] = I
 			overlays |= floor_light_cache[cache_key]
@@ -147,8 +153,4 @@ var/list/floor_light_cache = list()
 	var/area/A = get_area(src)
 	if(A)
 		on = 0
-	..()
-
-/obj/machinery/floor_light/cultify()
-	default_light_colour = "#FF0000"
-	update_brightness()
+	. = ..()

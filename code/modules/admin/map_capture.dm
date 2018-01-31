@@ -1,49 +1,79 @@
-/datum/admins/proc/capture_map(tx as num, ty as num, tz as num, range as num)
+/datum/admins/proc/capture_map_part(tx as null|num, ty as null|num, tz as null|num, range as null|num)
 	set category = "Server"
 	set name = "Capture Map Part"
+	set desc = "Usage: Capture-Map-Part target_x_cord target_y_cord target_z_cord range (captures part of a map originating from bottom left corner)"
 
 	if(!check_rights(R_ADMIN|R_DEBUG|R_SERVER))
+		to_chat(usr, "You are not allowed to use this command")
+		return
+
+	if(isnull(tx) || isnull(ty) || isnull(tz) || isnull(range))
+		to_chat(usr, "Capture Map Part, captures part of a map using camara like rendering.")
+		to_chat(usr, "Usage: Capture-Map-Part target_x_cord target_y_cord target_z_cord range")
+		to_chat(usr, "Target coordinates specify bottom left corner of the capture, range defines render distance to opposite corner.")
 		return
 
 	if(range > 32 || range <= 0)
-		usr << "Capturing range is incorrect, it must be within 1-32."
+		to_chat(usr, "Capturing range is incorrect, it must be within 1-32.")
 		return
 
 	if(locate(tx,ty,tz))
-		var/list/turfstocapture = list()
-		var/hasasked = 0
-		for(var/xoff = 0 to range)
-			for(var/yoff = 0 to range)
-				var/turf/T = locate(tx + xoff,ty + yoff,tz)
-				if(T)
-					turfstocapture.Add(T)
-				else
-					if(!hasasked)
-						var/answer = alert("Capture includes non existant turf, Continue capture?","Continue capture?", "No", "Yes")
-						hasasked = 1
-						if(answer == "No")
-							return
+		var/ligths = 0
+		if(alert("Do you want lighting to be included in capture?", "Map Capture", "No", "Yes") == "Yes")
+			ligths = 1
+		var/cap = generate_image(tx ,ty ,tz ,range, CAPTURE_MODE_PARTIAL, null, ligths, 1)
+		var/file_name = "map_capture_x[tx]_y[ty]_z[tz]_r[range].png"
+		to_chat(usr, "Saved capture in cache as [file_name].")
+		usr << browse_rsc(cap, file_name)
+	else
+		to_chat(usr, "Target coordinates are incorrect.")
 
-		var/list/atoms = list()
-		for(var/turf/T in turfstocapture)
-			atoms.Add(T)
-			for(var/atom/A in T)
-				if(A.invisibility) continue
-				atoms.Add(A)
+/datum/admins/proc/capture_map_capture_next(currentz, currentx, currenty, ligths)
+	if(locate(currentx, currenty, currentz))
+		var/cap = generate_image(currentx ,currenty ,currentz ,32, CAPTURE_MODE_PARTIAL, null, ligths, 1)
+		var/file_name = "map_capture_x[currentx]_y[currenty]_z[currentz]_r32.png"
+		to_chat(usr, "Saved capture in cache as [file_name].")
+		usr << browse_rsc(cap, file_name)
+		currentx = currentx + 32
+		spawn (1)
+			.(currentz, currentx, currenty, ligths)
+	else
+		currenty = currenty + 32
+		currentx = 1
+		if(locate(currentx, currenty, currentz))
+			var/cap = generate_image(currentx ,currenty ,currentz ,32, CAPTURE_MODE_PARTIAL, null, ligths, 1)
+			var/file_name = "map_capture_x[currentx]_y[currenty]_z[currentz]_r32.png"
+			to_chat(usr, "Saved capture in cache as [file_name].")
+			usr << browse_rsc(cap, file_name)
+			currentx = currentx + 32
+			spawn (1)
+				.(currentz, currentx, currenty, ligths)
+		else
+			to_chat(usr, "End of map, capture is done.")
 
-		atoms = sort_atoms_by_layer(atoms)
-		var/icon/cap = icon('icons/effects/96x96.dmi', "")
-		cap.Scale(range*32, range*32)
-		cap.Blend("#000", ICON_OVERLAY)
-		for(var/atom/A in atoms)
-			if(A)
-				var/icon/img = getFlatIcon(A)
-				if(istype(img, /icon))
-					if(istype(A, /mob/living) && A:lying)
-						img.BecomeLying()
-					var/xoff = (A.x - tx) * 32
-					var/yoff = (A.y - ty) * 32
-					cap.Blend(img, blendMode2iconMode(A.blend_mode),  A.pixel_x + xoff, A.pixel_y + yoff)
+/datum/admins/proc/capture_map(tz as null|num)
+	set category = "Server"
+	set name = "Capture Map"
+	set desc = "Usage: Capture-Map target_z_cord (captures map)"
 
+	if(!check_rights(R_ADMIN|R_DEBUG|R_SERVER))
+		to_chat(usr, "You are not allowed to use this command")
+		return
 
-		usr << browse_rsc(cap, "map_capture_x[tx]_y[ty]_z[tz]_r[range].png")
+	if(isnull(tz))
+		to_chat(usr, "Map Part, map using camara like rendering.")
+		to_chat(usr, "Usage: Capture-Map target_z_cord")
+		to_chat(usr, "Target Z coordinates define z level to capture.")
+		return
+
+	if(!locate(1, 1, tz))
+		to_chat(usr, "Target z-level is incorrect.")
+		return
+
+	var/ligths = 0
+	if(alert("Do you want lighting to be included in capture?", "Map Capture", "No", "Yes") == "Yes")
+		ligths = 1
+
+	switch(alert("Are you sure? (This will cause masive lag!!!)", "Map Capture", "No", "Yes"))
+		if("Yes")
+			usr.client.holder.capture_map_capture_next(tz, 1, 1, ligths)

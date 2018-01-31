@@ -10,10 +10,6 @@
 	Note that AI have no need for the adjacency proc, and so this proc is a lot cleaner.
 */
 /mob/living/silicon/ai/DblClickOn(var/atom/A, params)
-	if(client.buildmode) // comes after object.Click to allow buildmode gui objects to be clicked
-		build_click(src, client.buildmode, params, A)
-		return
-
 	if(control_disabled || stat) return
 
 	if(ismob(A))
@@ -27,14 +23,13 @@
 		return
 	next_click = world.time + 1
 
-	if(client.buildmode) // comes after object.Click to allow buildmode gui objects to be clicked
-		build_click(src, client.buildmode, params, A)
-		return
-
 	if(stat)
 		return
 
 	var/list/modifiers = params2list(params)
+	if(modifiers["ctrl"] && modifiers["alt"])
+		CtrlAltClickOn(A)
+		return
 	if(modifiers["shift"] && modifiers["ctrl"])
 		CtrlShiftClickOn(A)
 		return
@@ -51,12 +46,21 @@
 		CtrlClickOn(A)
 		return
 
+	face_atom(A) // change direction to face what you clicked on
+
 	if(control_disabled || !canClick())
 		return
 
-	if(aiCamera.in_camera_mode)
-		aiCamera.camera_mode_off()
-		aiCamera.captureimage(A, usr)
+	if(multitool_mode && isobj(A))
+		var/obj/O = A
+		var/datum/extension/interactive/multitool/MT = get_extension(O, /datum/extension/interactive/multitool)
+		if(MT)
+			MT.interact(aiMulti, src)
+			return
+
+	if(silicon_camera.in_camera_mode)
+		silicon_camera.camera_mode_off()
+		silicon_camera.captureimage(A, usr)
 		return
 
 	/*
@@ -88,6 +92,11 @@
 	for AI shift, ctrl, and alt clicking.
 */
 
+/mob/living/silicon/ai/CtrlAltClickOn(var/atom/A)
+	if(!control_disabled && A.AICtrlAltClick(src))
+		return
+	..()
+
 /mob/living/silicon/ai/ShiftClickOn(var/atom/A)
 	if(!control_disabled && A.AIShiftClick(src))
 		return
@@ -113,6 +122,17 @@
 	I have no idea why it was in atoms.dm instead of respective files.
 */
 
+/atom/proc/AICtrlAltClick()
+
+/obj/machinery/door/airlock/AICtrlAltClick() // Electrifies doors.
+	if(!electrified_until)
+		// permanent shock
+		Topic(src, list("command"="electrify_permanently", "activate" = "1"))
+	else
+		// disable/6 is not in Topic; disable/5 disables both temporary and permanent shock
+		Topic(src, list("command"="electrify_permanently", "activate" = "0"))
+	return 1
+
 /atom/proc/AICtrlShiftClick()
 	return
 
@@ -121,9 +141,9 @@
 
 /obj/machinery/door/airlock/AIShiftClick()  // Opens and closes doors!
 	if(density)
-		Topic(src, list("src"= "\ref[src]", "command"="open", "activate" = "1"), 1) // 1 meaning no window (consistency!)
+		Topic(src, list("command"="open", "activate" = "1"))
 	else
-		Topic(src, list("src"= "\ref[src]", "command"="open", "activate" = "0"), 1)
+		Topic(src, list("command"="open", "activate" = "0"))
 	return 1
 
 /atom/proc/AICtrlClick()
@@ -131,34 +151,28 @@
 
 /obj/machinery/door/airlock/AICtrlClick() // Bolts doors
 	if(locked)
-		Topic(src, list("src"= "\ref[src]", "command"="bolts", "activate" = "0"), 1)// 1 meaning no window (consistency!)
+		Topic(src, list("command"="bolts", "activate" = "0"))
 	else
-		Topic(src, list("src"= "\ref[src]", "command"="bolts", "activate" = "1"), 1)
+		Topic(src, list("command"="bolts", "activate" = "1"))
 	return 1
 
 /obj/machinery/power/apc/AICtrlClick() // turns off/on APCs.
-	Topic(src, list("src"= "\ref[src]", "breaker"="1"), 1) // 1 meaning no window (consistency!)
+	Topic(src, list("breaker"="1"))
 	return 1
 
 /obj/machinery/turretid/AICtrlClick() //turns off/on Turrets
-	Topic(src, list("src"= "\ref[src]", "command"="enable", "value"="[!enabled]"), 1) // 1 meaning no window (consistency!)
+	Topic(src, list("command"="enable", "value"="[!enabled]"))
 	return 1
 
 /atom/proc/AIAltClick(var/atom/A)
 	return AltClick(A)
 
-/obj/machinery/door/airlock/AIAltClick() // Electrifies doors.
-	if(!electrified_until)
-		// permanent shock
-		Topic(src, list("src"= "\ref[src]", "command"="electrify_permanently", "activate" = "1"), 1) // 1 meaning no window (consistency!)
-	else
-		// disable/6 is not in Topic; disable/5 disables both temporary and permanent shock
-		Topic(src, list("src"= "\ref[src]", "command"="electrify_permanently", "activate" = "0"), 1)
+/obj/machinery/turretid/AIAltClick() //toggles lethal on turrets
+	Topic(src, list("command"="lethal", "value"="[!lethal]"))
 	return 1
 
-/obj/machinery/turretid/AIAltClick() //toggles lethal on turrets
-	Topic(src, list("src"= "\ref[src]", "command"="lethal", "value"="[!lethal]"), 1) // 1 meaning no window (consistency!)
-	return 1
+/obj/machinery/atmospherics/binary/pump/AIAltClick()
+	return AltClick()
 
 /atom/proc/AIMiddleClick(var/mob/living/silicon/user)
 	return 0
@@ -169,9 +183,9 @@
 		return
 
 	if(!src.lights)
-		Topic(src, list("src"= "\ref[src]", "command"="lights", "activate" = "1"), 1) // 1 meaning no window (consistency!)
+		Topic(src, list("command"="lights", "activate" = "1"))
 	else
-		Topic(src, list("src"= "\ref[src]", "command"="lights", "activate" = "0"), 1)
+		Topic(src, list("command"="lights", "activate" = "0"))
 	return 1
 
 //
@@ -179,4 +193,8 @@
 //
 
 /mob/living/silicon/ai/TurfAdjacent(var/turf/T)
-	return (cameranet && cameranet.checkTurfVis(T))
+	return (cameranet && cameranet.is_turf_visible(T))
+
+/mob/living/silicon/ai/face_atom(var/atom/A)
+	if(eyeobj)
+		eyeobj.face_atom(A)

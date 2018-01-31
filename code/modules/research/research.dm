@@ -98,7 +98,7 @@ research holder datum.
 		var/datum/design/A = known_designs[i]
 		if(A.id == D.id) // We are guaranteed to reach this if the ids are the same, because sort_string will also be the same
 			return
-		if(A.sort_string >= D.sort_string)
+		if(A.sort_string > D.sort_string)
 			known_designs.Insert(i, D)
 			return
 	known_designs.Add(D)
@@ -122,6 +122,13 @@ research holder datum.
 			KT.level = max(KT.level + 1, level - 1)
 	return
 
+// A simple helper proc to find the name of a tech with a given ID.
+/proc/CallTechName(var/ID) 
+	for(var/T in subtypesof(/datum/tech))
+		var/datum/tech/check_tech = T
+		if(initial(check_tech.id) == ID)
+			return  initial(check_tech.name)
+	
 /***************************************************************
 **						Technology Datums					  **
 **	Includes all the various technoliges and what they make.  **
@@ -134,18 +141,18 @@ research holder datum.
 	var/level = 1						//A simple number scale of the research level. Level 0 = Secret tech.
 
 /datum/tech/materials
-	name = "Materials Research"
+	name = "Materials"
 	desc = "Development of new and improved materials."
 	id = TECH_MATERIAL
 
 /datum/tech/engineering
-	name = "Engineering Research"
+	name = "Engineering"
 	desc = "Development of new and improved engineering parts."
 	id = TECH_ENGINEERING
 
 /datum/tech/phorontech
-	name = "Phoron Research"
-	desc = "Research into the mysterious substance colloqually known as 'phoron'."
+	name = "Phoron Technology"
+	desc = "Manipulation of the mysterious substance colloqually known as 'phoron'."
 	id = TECH_PHORON
 
 /datum/tech/powerstorage
@@ -154,55 +161,52 @@ research holder datum.
 	id = TECH_POWER
 
 /datum/tech/bluespace
-	name = "'Blue-space' Research"
-	desc = "Research into the sub-reality known as 'blue-space'"
+	name = "'Blue-space' Technology"
+	desc = "Devices that utilize the sub-reality known as 'blue-space'"
 	id = TECH_BLUESPACE
 
 /datum/tech/biotech
 	name = "Biological Technology"
-	desc = "Research into the deeper mysteries of life and organic substances."
+	desc = "Deeper mysteries of life and organic substances."
 	id = TECH_BIO
 
 /datum/tech/combat
-	name = "Combat Systems Research"
-	desc = "The development of offensive and defensive systems."
+	name = "Combat Systems"
+	desc = "Offensive and defensive systems."
 	id = TECH_COMBAT
 
 /datum/tech/magnets
-	name = "Electromagnetic Spectrum Research"
-	desc = "Research into the electromagnetic spectrum. No clue how they actually work, though."
+	name = "Electromagnetic Spectrum Technology"
+	desc = "Electromagnetic spectrum and magnetic devices. No clue how they actually work, though."
 	id = TECH_MAGNET
 
 /datum/tech/programming
-	name = "Data Theory Research"
-	desc = "The development of new computer and artificial intelligence and data storage systems."
+	name = "Data Theory"
+	desc = "Computer and artificial intelligence and data storage systems."
 	id = TECH_DATA
 
 /datum/tech/syndicate
-	name = "Illegal Technologies Research"
-	desc = "The study of technologies that violate standard government regulations."
+	name = "ILLEGAL"
+	desc = "WARNING: Controlled technology detected. Fabrication of items using this technology is a direct violation of Federal Law 352-C part II and is a serious crime."
 	id = TECH_ILLEGAL
 	level = 0
 
 /datum/tech/arcane
-	name = "Arcane Research"
-	desc = "Research into the occult and arcane field for use in practical science"
+	name = "Arcane"
+	desc = "Techniques not explained by the mainstream science, commonly regarded as 'occult'."
 	id = TECH_ARCANE
 	level = 0
 
 /obj/item/weapon/disk/tech_disk
-	name = "technology disk"
-	desc = "A disk for storing technology data for further research."
+	name = "fabricator data disk"
+	desc = "A disk for storing fabricator learning data for backup."
 	icon = 'icons/obj/cloning.dmi'
 	icon_state = "datadisk2"
 	item_state = "card-id"
-	w_class = 2.0
+	w_class = ITEM_SIZE_SMALL
 	matter = list(DEFAULT_WALL_MATERIAL = 30, "glass" = 10)
 	var/datum/tech/stored
 
-/obj/item/weapon/disk/tech_disk/New()
-	pixel_x = rand(-5.0, 5)
-	pixel_y = rand(-5.0, 5)
 
 /obj/item/weapon/disk/design_disk
 	name = "component design disk"
@@ -210,10 +214,6 @@ research holder datum.
 	icon = 'icons/obj/cloning.dmi'
 	icon_state = "datadisk2"
 	item_state = "card-id"
-	w_class = 2.0
+	w_class = ITEM_SIZE_SMALL
 	matter = list(DEFAULT_WALL_MATERIAL = 30, "glass" = 10)
 	var/datum/design/blueprint
-
-/obj/item/weapon/disk/design_disk/New()
-	pixel_x = rand(-5.0, 5)
-	pixel_y = rand(-5.0, 5)

@@ -10,8 +10,11 @@ var/global/last_tick_duration = 0
 var/global/air_processing_killed = 0
 var/global/pipe_processing_killed = 0
 
+var/global/initialization_stage = 0
+
 datum/controller/game_controller
 	var/list/shuttle_list	                    // For debugging and VV
+	var/init_immediately = FALSE
 
 datum/controller/game_controller/New()
 	//There can be only one master_controller. Out with the old and in with the new.
@@ -23,7 +26,7 @@ datum/controller/game_controller/New()
 
 	if(!job_master)
 		job_master = new /datum/controller/occupations()
-		job_master.SetupOccupations()
+		job_master.SetupOccupations(setup_titles=1)
 		job_master.LoadJobs("config/jobs.txt")
 		admin_notice("<span class='danger'>Job setup complete</span>", R_DEBUG)
 
@@ -31,8 +34,6 @@ datum/controller/game_controller/New()
 	if(!syndicate_code_response)	syndicate_code_response	= generate_code_phrase()
 
 datum/controller/game_controller/proc/setup()
-	world.tick_lag = config.Ticklag
-
 	spawn(20)
 		createRandomZlevel()
 
@@ -42,38 +43,23 @@ datum/controller/game_controller/proc/setup()
 
 	transfer_controller = new
 
+	report_progress("Initializations complete")
+	initialization_stage |= INITIALIZATION_COMPLETE
 
 datum/controller/game_controller/proc/setup_objects()
-	admin_notice("<span class='danger'>Initializing objects</span>", R_DEBUG)
-	sleep(-1)
-	for(var/atom/movable/object in world)
-		object.initialize()
+	set background=1
 
-	admin_notice("<span class='danger'>Initializing areas</span>", R_DEBUG)
-	sleep(-1)
-	for(var/area/area in all_areas)
-		area.initialize()
+	// Do these first since character setup will rely on them
 
-	admin_notice("<span class='danger'>Initializing pipe networks</span>", R_DEBUG)
-	sleep(-1)
-	for(var/obj/machinery/atmospherics/machine in machines)
-		machine.build_network()
+	initialization_stage |= INITIALIZATION_HAS_BEGUN
 
-	admin_notice("<span class='danger'>Initializing atmos machinery.</span>", R_DEBUG)
-	sleep(-1)
-	for(var/obj/machinery/atmospherics/unary/U in machines)
-		if(istype(U, /obj/machinery/atmospherics/unary/vent_pump))
-			var/obj/machinery/atmospherics/unary/vent_pump/T = U
-			T.broadcast_status()
-		else if(istype(U, /obj/machinery/atmospherics/unary/vent_scrubber))
-			var/obj/machinery/atmospherics/unary/vent_scrubber/T = U
-			T.broadcast_status()
+	if(GLOB.using_map.use_overmap)
+		report_progress("Initializing overmap events")
+		overmap_event_handler.create_events(GLOB.using_map.overmap_z, GLOB.using_map.overmap_size, GLOB.using_map.overmap_event_areas)
 
-	// Set up antagonists.
-	populate_antag_type_list()
+	report_progress("Initializing lathe recipes")
+	populate_lathe_recipes()
 
-	//Set up spawn points.
-	populate_spawn_points()
-
-	admin_notice("<span class='danger'>Initializations complete.</span>", R_DEBUG)
-	sleep(-1)
+/proc/report_progress(var/progress_message)
+	admin_notice("<span class='boldannounce'>[progress_message]</span>", R_DEBUG)
+	to_world_log(progress_message)

@@ -6,7 +6,7 @@
 	fire_sound_text = "laser blast"
 
 	var/obj/item/weapon/cell/power_supply //What type of power cell this uses
-	var/charge_cost = 200 //How much energy is needed to fire.
+	var/charge_cost = 20 //How much energy is needed to fire.
 	var/max_shots = 10 //Determines the capacity of the weapon's power cell. Specifying a cell_type overrides this value.
 	var/cell_type = null
 	var/projectile_type = /obj/item/projectile/beam/practice
@@ -18,9 +18,12 @@
 	var/use_external_power = 0 //if set, the weapon will look for an external power source to draw from, otherwise it recharges magically
 	var/recharge_time = 4
 	var/charge_tick = 0
+	var/icon_rounder = 25
+	combustion = 1
 
 /obj/item/weapon/gun/energy/switch_firemodes()
-	if(..())
+	. = ..()
+	if(.)
 		update_icon()
 
 /obj/item/weapon/gun/energy/emp_act(severity)
@@ -34,15 +37,15 @@
 	else
 		power_supply = new /obj/item/weapon/cell/device/variable(src, max_shots*charge_cost)
 	if(self_recharge)
-		processing_objects.Add(src)
+		START_PROCESSING(SSobj, src)
 	update_icon()
 
 /obj/item/weapon/gun/energy/Destroy()
 	if(self_recharge)
-		processing_objects.Remove(src)
-	..()
+		STOP_PROCESSING(SSobj, src)
+	return ..()
 
-/obj/item/weapon/gun/energy/process()
+/obj/item/weapon/gun/energy/Process()
 	if(self_recharge) //Every [recharge_time] ticks, recharge a shot for the cyborg
 		charge_tick++
 		if(charge_tick < recharge_time) return 0
@@ -81,23 +84,24 @@
 	return null
 
 /obj/item/weapon/gun/energy/examine(mob/user)
-	..(user)
+	. = ..(user)
 	var/shots_remaining = round(power_supply.charge / charge_cost)
-	user << "Has [shots_remaining] shot\s remaining."
+	to_chat(user, "Has [shots_remaining] shot\s remaining.")
 	return
 
 /obj/item/weapon/gun/energy/update_icon()
+	..()
 	if(charge_meter)
-		var/ratio = power_supply.charge / power_supply.maxcharge
+		var/ratio = power_supply.percent()
 
 		//make sure that rounding down will not give us the empty state even if we have charge for a shot left.
 		if(power_supply.charge < charge_cost)
 			ratio = 0
 		else
-			ratio = max(round(ratio, 0.25) * 100, 25)
+			ratio = max(round(ratio, icon_rounder), icon_rounder)
 
 		if(modifystate)
 			icon_state = "[modifystate][ratio]"
 		else
 			icon_state = "[initial(icon_state)][ratio]"
-	update_held_icon()
+

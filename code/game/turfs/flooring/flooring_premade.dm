@@ -1,20 +1,42 @@
-/turf/simulated/floor/carpet
-	name = "carpet"
-	icon = 'icons/turf/flooring/carpet.dmi'
-	icon_state = "carpet"
-	initial_flooring = /decl/flooring/carpet
+// simulated/floor is currently plating by default, but there really should be an explicit plating type.
+/turf/simulated/floor/plating
+	name = "plating"
+	icon = 'icons/turf/flooring/plating.dmi'
+	icon_state = "plating"
+	plane = PLATING_PLANE
 
 /turf/simulated/floor/bluegrid
 	name = "mainframe floor"
 	icon = 'icons/turf/flooring/circuit.dmi'
 	icon_state = "bcircuit"
 	initial_flooring = /decl/flooring/reinforced/circuit
+	light_range = 2
+	light_power = 3
+	light_color = COLOR_BLUE
+
+/turf/simulated/floor/bluegrid/airless
+	initial_gas = null
 
 /turf/simulated/floor/greengrid
 	name = "mainframe floor"
 	icon = 'icons/turf/flooring/circuit.dmi'
 	icon_state = "gcircuit"
 	initial_flooring = /decl/flooring/reinforced/circuit/green
+	light_range = 2
+	light_power = 3
+	light_color = COLOR_GREEN
+
+/turf/simulated/floor/blackgrid
+	name = "mainframe floor"
+	icon = 'icons/turf/flooring/circuit.dmi'
+	icon_state = "rcircuit"
+	initial_flooring = /decl/flooring/reinforced/circuit/red
+	light_range = 2
+	light_power = 2
+	light_color = COLOR_RED
+
+/turf/simulated/floor/greengrid/airless
+	initial_gas = null
 
 /turf/simulated/floor/wood
 	name = "wooden floor"
@@ -28,16 +50,52 @@
 	icon_state = "grass0"
 	initial_flooring = /decl/flooring/grass
 
-/turf/simulated/floor/carpet/blue
-	name = "blue carpet"
-	icon_state = "bcarpet"
-	initial_flooring = /decl/flooring/carpet/blue
+/turf/simulated/floor/diona
+	name = "biomass"
+	icon = 'icons/turf/floors.dmi'
+	initial_flooring = /decl/flooring/diona
 
 /turf/simulated/floor/tiled
-	name = "floor"
+	name = "steel floor"
 	icon = 'icons/turf/flooring/tiles.dmi'
 	icon_state = "steel"
 	initial_flooring = /decl/flooring/tiling
+
+/turf/simulated/floor/carpet
+	name = "brown carpet"
+	icon = 'icons/turf/flooring/carpet.dmi'
+	icon_state = "brown"
+	initial_flooring = /decl/flooring/carpet
+
+/turf/simulated/floor/carpet/blue
+	name = "blue carpet"
+	icon_state = "blue1"
+	initial_flooring = /decl/flooring/carpet/blue
+
+/turf/simulated/floor/carpet/blue2
+	name = "pale blue carpet"
+	icon_state = "blue2"
+	initial_flooring = /decl/flooring/carpet/blue2
+
+/turf/simulated/floor/carpet/purple
+	name = "purple carpet"
+	icon_state = "purple"
+	initial_flooring = /decl/flooring/carpet/purple
+
+/turf/simulated/floor/carpet/orange
+	name = "orange carpet"
+	icon_state = "orange"
+	initial_flooring = /decl/flooring/carpet/orange
+
+/turf/simulated/floor/carpet/green
+	name = "green carpet"
+	icon_state = "green"
+	initial_flooring = /decl/flooring/carpet/green
+
+/turf/simulated/floor/carpet/red
+	name = "red carpet"
+	icon_state = "red"
+	initial_flooring = /decl/flooring/carpet/red
 
 /turf/simulated/floor/reinforced
 	name = "reinforced floor"
@@ -46,40 +104,42 @@
 	initial_flooring = /decl/flooring/reinforced
 
 /turf/simulated/floor/reinforced/airless
-	oxygen = 0
-	nitrogen = 0
+	initial_gas = null
 
 /turf/simulated/floor/reinforced/airmix
-	oxygen = MOLES_O2ATMOS
-	nitrogen = MOLES_N2ATMOS
+	initial_gas = list("oxygen" = MOLES_O2ATMOS, "nitrogen" = MOLES_N2ATMOS)
 
 /turf/simulated/floor/reinforced/nitrogen
-	oxygen = 0
-	nitrogen = MOLES_O2ATMOS + MOLES_N2ATMOS
+	initial_gas = list("nitrogen" = ATMOSTANK_NITROGEN)
+
+/turf/simulated/floor/reinforced/hydrogen
+	initial_gas = list("hydrogen" = ATMOSTANK_HYDROGEN)
 
 /turf/simulated/floor/reinforced/oxygen
-	oxygen = MOLES_O2ATMOS + MOLES_N2ATMOS
-	nitrogen = 0
+	initial_gas = list("oxygen" = ATMOSTANK_OXYGEN)
 
 /turf/simulated/floor/reinforced/phoron
-	oxygen = 0
-	nitrogen = 0
-	phoron = MOLES_O2ATMOS + MOLES_N2ATMOS
+	initial_gas = list("phoron" = ATMOSTANK_PHORON)
+
+/turf/simulated/floor/reinforced/nitrogen/engine
+	name = "engine floor"
+	initial_gas = list("nitrogen" = MOLES_N2STANDARD)
+
+/turf/simulated/floor/reinforced/phoron/fuel
+	initial_gas = list("phoron" = ATMOSTANK_PHORON_FUEL)
+
+/turf/simulated/floor/reinforced/hydrogen
+	initial_gas = list("hydrogen" = ATMOSTANK_HYDROGEN)
+
+/turf/simulated/floor/reinforced/hydrogen/fuel
+	initial_gas = list("hydrogen" = ATMOSTANK_HYDROGEN_FUEL)
 
 /turf/simulated/floor/reinforced/carbon_dioxide
-	oxygen = 0
-	nitrogen = 0
-	carbon_dioxide = MOLES_O2ATMOS + MOLES_N2ATMOS
+	initial_gas = list("carbon_dioxide" = ATMOSTANK_CO2)
 
 /turf/simulated/floor/reinforced/n20
-	oxygen = 0
-	nitrogen = 0
+	initial_gas = list("sleeping_agent" = ATMOSTANK_NITROUSOXIDE)
 
-/turf/simulated/floor/reinforced/n20/New()
-	..()
-	sleep(-1)
-	if(!air) make_air()
-	air.adjust_gas("sleeping_agent", MOLES_O2ATMOS + MOLES_N2ATMOS)
 
 /turf/simulated/floor/cult
 	name = "engraved floor"
@@ -95,25 +155,13 @@
 	icon_state = "dark"
 	initial_flooring = /decl/flooring/tiling/dark
 
-/turf/simulated/floor/tiled/red
-	name = "red floor"
-	icon_state = "red"
-	initial_flooring = /decl/flooring/tiling/red
-
-/turf/simulated/floor/tiled/steel
-	name = "steel floor"
-	icon_state = "steel_dirty"
-	initial_flooring = /decl/flooring/tiling/steel
+/turf/simulated/floor/tiled/dark/airless
+	initial_gas = null
 
 /turf/simulated/floor/tiled/white
 	name = "white floor"
 	icon_state = "white"
 	initial_flooring = /decl/flooring/tiling/white
-
-/turf/simulated/floor/tiled/yellow
-	name = "yellow floor"
-	icon_state = "yellow"
-	initial_flooring = /decl/flooring/tiling/yellow
 
 /turf/simulated/floor/tiled/freezer
 	name = "tiles"
@@ -129,59 +177,91 @@
 //ATMOS PREMADES
 /turf/simulated/floor/reinforced/airless
 	name = "vacuum floor"
-	oxygen = 0
-	nitrogen = 0
+	initial_gas = null
 	temperature = TCMB
-
-/turf/simulated/floor/reinforced/nitrogen
-	oxygen = 0
-
-/turf/simulated/floor/reinforced/n20/New()
-	. = ..()
-	assume_gas("sleeping_agent", 2000)
 
 /turf/simulated/floor/airless
 	name = "airless plating"
-	oxygen = 0
-	nitrogen = 0
+	initial_gas = null
 	temperature = TCMB
 
 /turf/simulated/floor/tiled/airless
 	name = "airless floor"
-	oxygen = 0
-	nitrogen = 0
+	initial_gas = null
 	temperature = TCMB
 
 /turf/simulated/floor/bluegrid/airless
 	name = "airless floor"
-	oxygen = 0
-	nitrogen = 0
+	initial_gas = null
 	temperature = TCMB
 
 /turf/simulated/floor/greengrid/airless
 	name = "airless floor"
-	oxygen = 0
-	nitrogen = 0
+	initial_gas = null
 	temperature = TCMB
 
 /turf/simulated/floor/greengrid/nitrogen
-	oxygen = 0
+	initial_gas = list("nitrogen" = MOLES_N2STANDARD)
 
 /turf/simulated/floor/tiled/white/airless
 	name = "airless floor"
-	oxygen = 0
-	nitrogen = 0
+	initial_gas = null
 	temperature = TCMB
 
 // Placeholders
 /turf/simulated/floor/airless/lava
-/turf/simulated/floor/light
+	name = "lava"
+	icon = 'icons/turf/flooring/lava.dmi'
+	icon_state = "lava"
+
+/turf/simulated/floor/ice
+	name = "ice"
+	icon = 'icons/turf/snow.dmi'
+	icon_state = "ice"
+
 /turf/simulated/floor/snow
-/turf/simulated/floor/beach
-/turf/simulated/floor/beach/sand
-/turf/simulated/floor/beach/sand/desert
-/turf/simulated/floor/beach/coastline
-/turf/simulated/floor/beach/water
-/turf/simulated/floor/beach/water/ocean
-/turf/simulated/floor/plating/snow
+	name = "snow"
+	icon = 'icons/turf/snow.dmi'
+	icon_state = "snow"
+
+/turf/simulated/floor/snow/New()
+	icon_state = pick("snow[rand(1,12)]","snow0")
+	..()
+
+/turf/simulated/floor/light
 /turf/simulated/floor/airless/ceiling
+
+/turf/simulated/floor/beach
+	name = "beach"
+	icon = 'icons/misc/beach.dmi'
+
+/turf/simulated/floor/beach/sand
+	name = "sand"
+	icon_state = "sand"
+
+/turf/simulated/floor/beach/sand/desert
+	icon_state = "desert"
+	has_resources = 1
+
+/turf/simulated/floor/beach/sand/desert/New()
+	icon_state = "desert[rand(0,5)]"
+	..()
+
+/turf/simulated/floor/beach/coastline
+	name = "coastline"
+	icon = 'icons/misc/beach2.dmi'
+	icon_state = "sandwater"
+
+/turf/simulated/floor/beach/water
+	name = "water"
+	icon_state = "water"
+
+/turf/simulated/floor/beach/water/update_dirt()
+	return	// Water doesn't become dirty
+
+/turf/simulated/floor/beach/water/ocean
+	icon_state = "seadeep"
+
+/turf/simulated/floor/beach/water/New()
+	..()
+	overlays += image("icon"='icons/misc/beach.dmi',"icon_state"="water5","layer"=MOB_LAYER+0.1)

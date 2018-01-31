@@ -35,7 +35,7 @@
 	if(sdisability)
 		M.sdisabilities|=sdisability
 	if(activation_message)
-		M << "<span class='warning'>[activation_message]</span>"
+		to_chat(M, "<span class='warning'>[activation_message]</span>")
 	else
 		testing("[name] has no activation message.")
 
@@ -47,7 +47,7 @@
 	if(sdisability)
 		M.sdisabilities &= (~sdisability)
 	if(deactivation_message)
-		M << "<span class='warning'>[deactivation_message]</span>"
+		to_chat(M, "<span class='warning'>[deactivation_message]</span>")
 	else
 		testing("[name] has no deactivation message.")
 
@@ -58,7 +58,7 @@
 	mutation=mHallucination
 
 	New()
-		block=HALLUCINATIONBLOCK
+		block=GLOB.HALLUCINATIONBLOCK
 
 /datum/dna/gene/disability/epilepsy
 	name="Epilepsy"
@@ -66,7 +66,7 @@
 	disability=EPILEPSY
 
 	New()
-		block=HEADACHEBLOCK
+		block=GLOB.HEADACHEBLOCK
 
 /datum/dna/gene/disability/cough
 	name="Coughing"
@@ -74,7 +74,7 @@
 	disability=COUGHING
 
 	New()
-		block=COUGHBLOCK
+		block=GLOB.COUGHBLOCK
 
 /datum/dna/gene/disability/clumsy
 	name="Clumsiness"
@@ -82,7 +82,7 @@
 	mutation=CLUMSY
 
 	New()
-		block=CLUMSYBLOCK
+		block=GLOB.CLUMSYBLOCK
 
 /datum/dna/gene/disability/tourettes
 	name="Tourettes"
@@ -90,7 +90,7 @@
 	disability=TOURETTES
 
 	New()
-		block=TWITCHBLOCK
+		block=GLOB.TWITCHBLOCK
 
 /datum/dna/gene/disability/nervousness
 	name="Nervousness"
@@ -98,7 +98,7 @@
 	disability=NERVOUS
 
 	New()
-		block=NERVOUSBLOCK
+		block=GLOB.NERVOUSBLOCK
 
 /datum/dna/gene/disability/blindness
 	name="Blindness"
@@ -106,7 +106,7 @@
 	sdisability=BLIND
 
 	New()
-		block=BLINDBLOCK
+		block=GLOB.BLINDBLOCK
 
 /datum/dna/gene/disability/deaf
 	name="Deafness"
@@ -114,7 +114,7 @@
 	sdisability=DEAF
 
 	New()
-		block=DEAFBLOCK
+		block=GLOB.DEAFBLOCK
 
 	activate(var/mob/M, var/connected, var/flags)
 		..(M,connected,flags)
@@ -126,4 +126,4 @@
 	disability=NEARSIGHTED
 
 	New()
-		block=GLASSESBLOCK
+		block=GLOB.GLASSESBLOCK

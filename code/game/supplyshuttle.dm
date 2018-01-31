@@ -1,8 +1,6 @@
 //Config stuff
 #define SUPPLY_DOCKZ 2          //Z-level of the Dock.
 #define SUPPLY_STATIONZ 1       //Z-level of the Station.
-#define SUPPLY_STATION_AREATYPE "/area/supply/station" //Type of the supply shuttle area for station
-#define SUPPLY_DOCK_AREATYPE "/area/supply/dock"	//Type of the supply shuttle area for dock
 
 //Supply packs are in /code/defines/obj/supplypacks.dm
 //Computers are in /code/game/machinery/computer/supply.dm
@@ -27,16 +25,6 @@ var/list/mechtoys = list(
 	name = "supply manifest"
 	var/is_copy = 1
 
-/area/supply/station
-	name = "Supply Shuttle"
-	icon_state = "shuttle3"
-	requires_power = 0
-
-/area/supply/dock
-	name = "Supply Shuttle"
-	icon_state = "shuttle3"
-	requires_power = 0
-
 /obj/structure/plasticflaps //HOW DO YOU CALL THOSE THINGS ANYWAY
 	name = "\improper plastic flaps"
 	desc = "Completely impassable - or are they?"
@@ -44,16 +32,18 @@ var/list/mechtoys = list(
 	icon_state = "plasticflaps"
 	density = 0
 	anchored = 1
-	layer = 4
+	plane = ABOVE_HUMAN_PLANE
+	layer = ABOVE_HUMAN_LAYER
 	explosion_resistance = 5
 	var/list/mobs_can_pass = list(
+		/mob/living/bot,
 		/mob/living/carbon/slime,
 		/mob/living/simple_animal/mouse,
 		/mob/living/silicon/robot/drone
 		)
 
 /obj/structure/plasticflaps/CanPass(atom/A, turf/T)
-	if(istype(A) && A.checkpass(PASSGLASS))
+	if(istype(A) && A.checkpass(PASS_FLAG_GLASS))
 		return prob(60)
 
 	var/obj/structure/bed/B = A
@@ -70,11 +60,7 @@ var/list/mechtoys = list(
 		for(var/mob_type in mobs_can_pass)
 			if(istype(A, mob_type))
 				return ..()
-		if(istype(A, /mob/living/carbon/human))
-			var/mob/living/carbon/human/H = M
-			if(H.species.is_small)
-				return ..()
-		return 0
+		return issmall(M)
 
 	return ..()
 
@@ -118,38 +104,62 @@ var/list/mechtoys = list(
 
 /datum/supply_order
 	var/ordernum
-	var/datum/supply_packs/object = null
+	var/decl/hierarchy/supply_pack/object = null
 	var/orderedby = null
 	var/comment = null
+	var/reason = null
+	var/orderedrank = null //used for supply console printing
+
+var/list/point_source_descriptions = list(
+	"time" = "Base station supply",
+	"manifest" = "From exported manifests",
+	"crate" = "From exported crates",
+	"phoron" = "From exported phoron",
+	"platinum" = "From exported platinum",
+	"virology" = "From uploaded antibody data",
+	"total" = "Total" // If you're adding additional point sources, add it here in a new line. Don't forget to put a comma after the old last line.
+	)
+
+//Adds the points from different sources together and saves them for the export overview
+/datum/controller/supply/proc/add_points_from_source(amount, source)
+	points += amount
+	point_sources[source] += amount
+	point_sources["total"] += amount
 
 /datum/controller/supply
 	//supply points
 	var/points = 50
-	var/points_per_process = 1
+	var/points_per_process = 1.5
 	var/points_per_slip = 2
-	var/points_per_crate = 5
 	var/points_per_platinum = 5 // 5 points per sheet
 	var/points_per_phoron = 5
+	var/point_sources = list()
+	var/pointstotalsum = 0
+	var/pointstotal = 0
 	//control
 	var/ordernum
 	var/list/shoppinglist = list()
 	var/list/requestlist = list()
-	var/list/supply_packs = list()
+	var/list/donelist = list()
+	var/list/master_supply_list = list()
 	//shuttle movement
 	var/movetime = 1200
-	var/datum/shuttle/ferry/supply/shuttle
+	var/datum/shuttle/autodock/ferry/supply/shuttle
 
 	New()
 		ordernum = rand(1,9000)
 
-		for(var/typepath in (typesof(/datum/supply_packs) - /datum/supply_packs))
-			var/datum/supply_packs/P = new typepath()
-			supply_packs[P.name] = P
+		//Build master supply list
+		for(var/decl/hierarchy/supply_pack/sp in cargo_supply_pack_root.children)
+			if(sp.is_category())
+				for(var/decl/hierarchy/supply_pack/spc in sp.children)
+					master_supply_list += spc
+
 
 	// Supply shuttle ticker - handles supply point regeneration
 	// This is called by the process scheduler every thirty seconds
 	proc/process()
-		points += points_per_process
+		add_points_from_source(points_per_process, "time")
 
 	//To stop things being sent to centcomm which should not be sent to centcomm. Recursively checks for these types.
 	proc/forbidden_atoms_check(atom/A)
@@ -169,78 +179,74 @@ var/list/mechtoys = list(
 
 	//Sellin
 	proc/sell()
-		var/area/area_shuttle = shuttle.get_location_area()
-		if(!area_shuttle)	return
-
 		var/phoron_count = 0
 		var/plat_count = 0
+		for(var/area/subarea in shuttle.shuttle_area)
+			for(var/atom/movable/MA in subarea)
+				if(MA.anchored)	continue
 
-		for(var/atom/movable/MA in area_shuttle)
-			if(MA.anchored)	continue
+				// Must be in a crate!
+				if(istype(MA,/obj/structure/closet/crate))
+					var/obj/structure/closet/crate/CR = MA
+					callHook("sell_crate", list(CR, subarea))
 
-			// Must be in a crate!
-			if(istype(MA,/obj/structure/closet/crate))
-				callHook("sell_crate", list(MA, area_shuttle))
+					add_points_from_source(CR.points_per_crate, "crate")
+					var/find_slip = 1
 
-				points += points_per_crate
-				var/find_slip = 1
+					for(var/atom in CR)
+						// Sell manifests
+						var/atom/A = atom
+						if(find_slip && istype(A,/obj/item/weapon/paper/manifest))
+							var/obj/item/weapon/paper/manifest/slip = A
+							if(!slip.is_copy && slip.stamped && slip.stamped.len) //yes, the clown stamp will work. clown is the highest authority on the station, it makes sense
+								add_points_from_source(points_per_slip, "manifest")
+								find_slip = 0
+							continue
 
-				for(var/atom in MA)
-					// Sell manifests
-					var/atom/A = atom
-					if(find_slip && istype(A,/obj/item/weapon/paper/manifest))
-						var/obj/item/weapon/paper/manifest/slip = A
-						if(!slip.is_copy && slip.stamped && slip.stamped.len) //yes, the clown stamp will work. clown is the highest authority on the station, it makes sense
-							points += points_per_slip
-							find_slip = 0
-						continue
-
-					// Sell phoron and platinum
-					if(istype(A, /obj/item/stack))
-						var/obj/item/stack/P = A
-						switch(P.get_material_name())
-							if("phoron") phoron_count += P.get_amount()
-							if("platinum") plat_count += P.get_amount()
-			qdel(MA)
+						// Sell phoron and platinum
+						if(istype(A, /obj/item/stack))
+							var/obj/item/stack/P = A
+							switch(P.get_material_name())
+								if("phoron") phoron_count += P.get_amount()
+								if("platinum") plat_count += P.get_amount()
+				qdel(MA)
 
 		if(phoron_count)
-			points += phoron_count * points_per_phoron
+			var/temp = phoron_count * points_per_phoron
+			add_points_from_source(temp, "phoron")
 
 		if(plat_count)
-			points += plat_count * points_per_platinum
+			var/temp = plat_count * points_per_platinum
+			add_points_from_source(temp, "platinum")
 
 	//Buyin
 	proc/buy()
 		if(!shoppinglist.len) return
-
-		var/area/area_shuttle = shuttle.get_location_area()
-		if(!area_shuttle)	return
-
 		var/list/clear_turfs = list()
-
-		for(var/turf/T in area_shuttle)
-			if(T.density)	continue
-			var/contcount
-			for(var/atom/A in T.contents)
-				if(!A.simulated)
+		for(var/area/subarea in shuttle.shuttle_area)
+			for(var/turf/T in subarea)
+				if(T.density)	continue
+				var/contcount
+				for(var/atom/A in T.contents)
+					if(!A.simulated)
+						continue
+					contcount++
+				if(contcount)
 					continue
-				contcount++
-			if(contcount)
-				continue
-			clear_turfs += T
-
+				clear_turfs += T
 		for(var/S in shoppinglist)
 			if(!clear_turfs.len)	break
 			var/i = rand(1,clear_turfs.len)
 			var/turf/pickedloc = clear_turfs[i]
 			clear_turfs.Cut(i,i+1)
+			shoppinglist -= S
+			donelist += S
 
 			var/datum/supply_order/SO = S
-			var/datum/supply_packs/SP = SO.object
+			var/decl/hierarchy/supply_pack/SP = SO.object
 
 			var/obj/A = new SP.containertype(pickedloc)
-			A.name = "[SP.containername] [SO.comment ? "([SO.comment])":"" ]"
-
+			A.name = "[SP.containername][SO.comment ? " ([SO.comment])":"" ]"
 			//supply manifest generation begin
 
 			var/obj/item/weapon/paper/manifest/slip
@@ -249,7 +255,7 @@ var/list/mechtoys = list(
 				slip.is_copy = 0
 				slip.info = "<h3>[command_name()] Shipping Manifest</h3><hr><br>"
 				slip.info +="Order #[SO.ordernum]<br>"
-				slip.info +="Destination: [station_name]<br>"
+				slip.info +="Destination: [GLOB.using_map.station_name]<br>"
 				slip.info +="[shoppinglist.len] PACKAGES IN THIS SHIPMENT<br>"
 				slip.info +="CONTENTS:<br><ul>"
 
@@ -261,28 +267,13 @@ var/list/mechtoys = list(
 					var/list/L = SP.access // access var is a plain var, we need a list
 					A.req_access = L.Copy()
 				else
-					world << "<span class='danger'>Supply pack with invalid access restriction [SP.access] encountered!</span>"
+					log_debug("<span class='danger'>Supply pack with invalid access restriction [SP.access] encountered!</span>")
 
-			var/list/contains
-			if(istype(SP,/datum/supply_packs/randomised))
-				var/datum/supply_packs/randomised/SPR = SP
-				contains = list()
-				if(SPR.contains.len)
-					for(var/j=1,j<=SPR.num_contained,j++)
-						contains += pick(SPR.contains)
-			else
-				contains = SP.contains
-
-			for(var/typepath in contains)
-				if(!typepath)	continue
-				var/atom/B2 = new typepath(A)
-				if(SP.amount && B2:amount) B2:amount = SP.amount
-				if(slip) slip.info += "<li>[B2.name]</li>" //add the item to the manifest
-
-			//manifest finalisation
+			var/list/spawned = SP.spawn_contents(A)
 			if(slip)
+				for(var/atom/content in spawned)
+					slip.info += "<li>[content.name]</li>" //add the item to the manifest
 				slip.info += "</ul><br>"
 				slip.info += "CHECK CONTENTS AND STAMP BELOW THE LINE TO CONFIRM RECEIPT OF GOODS<hr>"
 
-		shoppinglist.Cut()
 		return

@@ -3,15 +3,29 @@
 	name = "docking port controller"
 	var/datum/computer/file/embedded_program/airlock/docking/airlock_program
 	var/datum/computer/file/embedded_program/docking/airlock/docking_program
+	var/display_name			//how would it show up on docking monitoring program, area name + coordinates if unset
 	tag_secure = 1
 
-/obj/machinery/embedded_controller/radio/airlock/docking_port/initialize()
+/obj/machinery/embedded_controller/radio/airlock/docking_port/New()
 	..()
 	airlock_program = new/datum/computer/file/embedded_program/airlock/docking(src)
 	docking_program = new/datum/computer/file/embedded_program/docking/airlock(src, airlock_program)
 	program = docking_program
+	if(display_name)
+		docking_program.display_name = display_name
 
-/obj/machinery/embedded_controller/radio/airlock/docking_port/ui_interact(mob/user, ui_key = "main", var/datum/nanoui/ui = null, var/force_open = 1)
+/obj/machinery/embedded_controller/radio/airlock/docking_port/attackby(obj/item/W, mob/user)
+	if(istype(W,/obj/item/device/multitool)) //give them part of code, would take few tries to get full
+		var/code = docking_program.docking_codes
+		if(!code)
+			code = "N/A"
+		else
+			code = stars(code)
+		to_chat(user,"[W]'s screen displays '[code]'")
+	else
+		..()
+
+/obj/machinery/embedded_controller/radio/airlock/docking_port/ui_interact(mob/user, ui_key = "main", var/datum/nanoui/ui = null, var/force_open = 1, var/datum/nano_ui/master_ui = null, var/datum/topic_state/state = GLOB.default_state)
 	var/data[0]
 
 	data = list(
@@ -22,12 +36,14 @@
 		"docking_status" = docking_program.get_docking_status(),
 		"airlock_disabled" = !(docking_program.undocked() || docking_program.override_enabled),
 		"override_enabled" = docking_program.override_enabled,
+		"docking_codes" = docking_program.docking_codes,
+		"name" = docking_program.get_name()
 	)
 
-	ui = nanomanager.try_update_ui(user, src, ui_key, ui, data, force_open)
+	ui = GLOB.nanomanager.try_update_ui(user, src, ui_key, ui, data, force_open)
 
 	if (!ui)
-		ui = new(user, src, ui_key, "docking_airlock_console.tmpl", name, 470, 290)
+		ui = new(user, src, ui_key, "docking_airlock_console.tmpl", name, 470, 290, state = state)
 		ui.set_initial_data(data)
 		ui.open()
 		ui.set_auto_update(1)
@@ -37,7 +53,6 @@
 		return
 
 	usr.set_machine(src)
-	src.add_fingerprint(usr)
 
 	var/clean = 0
 	switch(href_list["command"])	//anti-HTML-hacking checks
@@ -52,6 +67,8 @@
 		if("abort")
 			clean = 1
 		if("toggle_override")
+			clean = 1
+		if("dock")
 			clean = 1
 
 	if(clean)
@@ -140,16 +157,18 @@
 /*** DEBUG VERBS ***
 
 /datum/computer/file/embedded_program/docking/proc/print_state()
-	world << "id_tag: [id_tag]"
-	world << "dock_state: [dock_state]"
-	world << "control_mode: [control_mode]"
-	world << "tag_target: [tag_target]"
-	world << "response_sent: [response_sent]"
+	log_debug("id_tag: [id_tag]")
+	log_debug("dock_state: [dock_state]")
+	log_debug("control_mode: [control_mode]")
+	log_debug("tag_target: [tag_target]")
+	log_debug("response_sent: [response_sent]")
 
 /datum/computer/file/embedded_program/docking/post_signal(datum/signal/signal, comm_line)
-	world << "Program [id_tag] sent a message!"
+	log_debug("Program [id_tag] sent a message!")
+
 	print_state()
-	world << "[id_tag] sent command \"[signal.data["command"]]\" to \"[signal.data["recipient"]]\""
+	log_debug("[id_tag] sent command \"[signal.data["command"]]\" to \"[signal.data["recipient"]]\"")
+
 	..(signal)
 
 /obj/machinery/embedded_controller/radio/airlock/docking_port/verb/view_state()

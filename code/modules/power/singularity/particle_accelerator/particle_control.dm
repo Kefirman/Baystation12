@@ -30,7 +30,9 @@
 /obj/machinery/particle_accelerator/control_box/Destroy()
 	if(active)
 		toggle_power()
-	..()
+	qdel(wires)
+	wires = null
+	return ..()
 
 /obj/machinery/particle_accelerator/control_box/attack_hand(mob/user as mob)
 	if(construction_state >= 3)
@@ -136,7 +138,7 @@
 		strength_change()
 
 /obj/machinery/particle_accelerator/control_box/power_change()
-	..()
+	. = ..()
 	if(stat & NOPOWER)
 		active = 0
 		update_use_power(0)
@@ -145,7 +147,7 @@
 	return
 
 
-/obj/machinery/particle_accelerator/control_box/process()
+/obj/machinery/particle_accelerator/control_box/Process()
 	if(src.active)
 		//a part is missing!
 		if( length(connected_parts) < 6 )

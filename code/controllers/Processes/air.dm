@@ -1,6 +1,7 @@
 /datum/controller/process/air/setup()
 	name = "air"
 	schedule_interval = 20 // every 2 seconds
+	start_delay = 4
 
 	if(!air_master)
 		air_master = new
@@ -12,8 +13,9 @@
 			air_master.failed_ticks++
 
 			if(air_master.failed_ticks > 5)
-				world << "<SPAN CLASS='danger'>RUNTIMES IN ATMOS TICKER.  Killing air simulation!</SPAN>"
-				world.log << "### ZAS SHUTDOWN"
+				to_world("<SPAN CLASS='danger'>RUNTIME'S IN ATMOS TICKER.  Killing air simulation!</SPAN>")
+
+				log_error("### ZAS SHUTDOWN")
 
 				message_admins("ZASALERT: Shutting down! status: [air_master.tick_progress]")
 				log_admin("ZASALERT: Shutting down! status: [air_master.tick_progress]")

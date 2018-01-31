@@ -46,6 +46,10 @@ var/list/wireColours = list("red", "blue", "green", "darkred", "orange", "brown"
 			var/list/wires = same_wires[holder_type]
 			src.wires = wires // Reference the wires list.
 
+/datum/wires/Destroy()
+	holder = null
+	return ..()
+
 /datum/wires/proc/GenerateWires()
 	var/list/colours_to_pick = wireColours.Copy() // Get a copy, not a reference.
 	var/list/indexes_to_pick = list()
@@ -90,7 +94,7 @@ var/list/wireColours = list("red", "blue", "green", "darkred", "orange", "brown"
 
 	for(var/colour in wires)
 		html += "<tr>"
-		html += "<td[row_options1]><font color='[colour]'>[capitalize(colour)]</font></td>"
+		html += "<td[row_options1]><font color='[colour]'>&#9724;</font>[capitalize(colour)]</td>"
 		html += "<td[row_options2]>"
 		html += "<A href='?src=\ref[src];action=1;cut=[colour]'>[IsColourCut(colour) ? "Mend" :  "Cut"]</A>"
 		html += " <A href='?src=\ref[src];action=1;pulse=[colour]'>Pulse</A>"
@@ -112,19 +116,17 @@ var/list/wireColours = list("red", "blue", "green", "darkred", "orange", "brown"
 			var/obj/item/I = L.get_active_hand()
 			holder.add_hiddenprint(L)
 			if(href_list["cut"]) // Toggles the cut/mend status
-				if(istype(I, /obj/item/weapon/wirecutters))
+				if(isWirecutter(I))
 					var/colour = href_list["cut"]
 					CutWireColour(colour)
 				else
-					L << "<span class='error'>You need wirecutters!</span>"
-
+					to_chat(L, "<span class='error'>You need wirecutters!</span>")
 			else if(href_list["pulse"])
-				if(istype(I, /obj/item/device/multitool))
+				if(isMultitool(I))
 					var/colour = href_list["pulse"]
 					PulseColour(colour)
 				else
-					L << "<span class='error'>You need a multitool!</span>"
-
+					to_chat(L, "<span class='error'>You need a multitool!</span>")
 			else if(href_list["attach"])
 				var/colour = href_list["attach"]
 				// Detach
@@ -139,8 +141,7 @@ var/list/wireColours = list("red", "blue", "green", "darkred", "orange", "brown"
 						L.drop_item()
 						Attach(colour, I)
 					else
-						L << "<span class='error'>You need a remote signaller!</span>"
-
+						to_chat(L, "<span class='error'>You need a remote signaller!</span>")
 
 
 
@@ -207,6 +208,11 @@ var/const/POWER = 8
 	else
 		CRASH("[colour] is not a key in wires.")
 
+
+/datum/wires/proc/RandomPulse()
+	var/index = rand(1, wires.len)
+	PulseIndex(index)
+
 //
 // Is Index/Colour Cut procs
 //
@@ -236,7 +242,7 @@ var/const/POWER = 8
 	if(colour && S)
 		if(!IsAttached(colour))
 			signallers[colour] = S
-			S.loc = holder
+			S.forceMove(holder)
 			S.connected = src
 			return S
 
@@ -246,7 +252,7 @@ var/const/POWER = 8
 		if(S)
 			signallers -= colour
 			S.connected = null
-			S.loc = holder.loc
+			S.dropInto(holder.loc)
 			return S
 
 
@@ -256,7 +262,6 @@ var/const/POWER = 8
 		if(S == signallers[colour])
 			PulseColour(colour)
 			break
-
 
 //
 // Cut Wire Colour/Index procs

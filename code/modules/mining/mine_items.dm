@@ -19,14 +19,14 @@
 		new /obj/item/weapon/storage/backpack/satchel_eng(src)
 	new /obj/item/device/radio/headset/headset_cargo(src)
 	new /obj/item/clothing/under/rank/miner(src)
-	new /obj/item/clothing/gloves/black(src)
+	new /obj/item/clothing/gloves/thick(src)
 	new /obj/item/clothing/shoes/black(src)
 	new /obj/item/device/analyzer(src)
-	new /obj/item/weapon/storage/bag/ore(src)
+	new /obj/item/weapon/storage/ore(src)
 	new /obj/item/device/flashlight/lantern(src)
 	new /obj/item/weapon/shovel(src)
 	new /obj/item/weapon/pickaxe(src)
-	new /obj/item/clothing/glasses/material(src)
+	new /obj/item/clothing/glasses/meson(src)
 
 /******************************Lantern*******************************/
 
@@ -41,14 +41,14 @@
 /obj/item/weapon/pickaxe
 	name = "mining drill"
 	desc = "The most basic of mining drills, for short excavations and small mineral extractions."
-	icon = 'icons/obj/items.dmi'
-	flags = CONDUCT
+	icon = 'icons/obj/tools.dmi'
+	obj_flags = OBJ_FLAG_CONDUCTIBLE
 	slot_flags = SLOT_BELT
 	force = 15.0
 	throwforce = 4.0
 	icon_state = "pickaxe"
 	item_state = "jackhammer"
-	w_class = 4.0
+	w_class = ITEM_SIZE_HUGE
 	matter = list(DEFAULT_WALL_MATERIAL = 3750)
 	var/digspeed = 40 //moving the delay to an item var so R&D can make improved picks. --NEO
 	origin_tech = list(TECH_MATERIAL = 1, TECH_ENGINEERING = 1)
@@ -57,7 +57,7 @@
 	var/drill_verb = "drilling"
 	sharp = 1
 
-	var/excavation_amount = 100
+	var/excavation_amount = 200
 
 /obj/item/weapon/pickaxe/hammer
 	name = "sledgehammer"
@@ -99,20 +99,6 @@
 	desc = "This makes no metallurgic sense."
 	drill_verb = "picking"
 
-/obj/item/weapon/pickaxe/plasmacutter
-	name = "plasma cutter"
-	icon_state = "plasmacutter"
-	item_state = "gun"
-	w_class = 3.0 //it is smaller than the pickaxe
-	damtype = "fire"
-	digspeed = 20 //Can slice though normal walls, all girders, or be used in reinforced wall deconstruction/ light thermite on fire
-	origin_tech = list(TECH_MATERIAL = 4, TECH_PHORON = 3, TECH_ENGINEERING = 3)
-	desc = "A rock cutter that uses bursts of hot plasma. You could use it to cut limbs off of xenos! Or, you know, mine stuff."
-	drill_verb = "cutting"
-	drill_sound = 'sound/items/Welder.ogg'
-	sharp = 1
-	edge = 1
-
 /obj/item/weapon/pickaxe/diamond
 	name = "diamond pickaxe"
 	icon_state = "dpickaxe"
@@ -144,14 +130,14 @@
 /obj/item/weapon/shovel
 	name = "shovel"
 	desc = "A large tool for digging and moving dirt."
-	icon = 'icons/obj/items.dmi'
+	icon = 'icons/obj/tools.dmi'
 	icon_state = "shovel"
-	flags = CONDUCT
+	obj_flags = OBJ_FLAG_CONDUCTIBLE
 	slot_flags = SLOT_BELT
 	force = 8.0
 	throwforce = 4.0
 	item_state = "shovel"
-	w_class = 3.0
+	w_class = ITEM_SIZE_HUGE
 	origin_tech = list(TECH_MATERIAL = 1, TECH_ENGINEERING = 1)
 	matter = list(DEFAULT_WALL_MATERIAL = 50)
 	attack_verb = list("bashed", "bludgeoned", "thrashed", "whacked")
@@ -165,7 +151,7 @@
 	item_state = "spade"
 	force = 5.0
 	throwforce = 7.0
-	w_class = 2.0
+	w_class = ITEM_SIZE_SMALL
 
 
 /**********************Mining car (Crate like thing, not the rail car)**************************/
@@ -188,61 +174,150 @@
 	amount = 10
 	max_amount = 10
 	icon = 'icons/obj/mining.dmi'
-	var/upright = 0
-	var/base_state
 
-/obj/item/stack/flag/New()
-	..()
-	base_state = icon_state
+	var/upright = 0
+	var/fringe = null
 
 /obj/item/stack/flag/red
 	name = "red flags"
 	singular_name = "red flag"
 	icon_state = "redflag"
+	fringe = "redflag_fringe"
+	light_color = COLOR_RED
 
 /obj/item/stack/flag/yellow
 	name = "yellow flags"
 	singular_name = "yellow flag"
 	icon_state = "yellowflag"
+	fringe = "yellowflag_fringe"
+	light_color = COLOR_YELLOW
 
 /obj/item/stack/flag/green
 	name = "green flags"
 	singular_name = "green flag"
 	icon_state = "greenflag"
+	fringe = "greenflag_fringe"
+	light_color = COLOR_LIME
 
-/obj/item/stack/flag/attackby(obj/item/W as obj, mob/user as mob)
-	if(upright && istype(W,src.type))
-		src.attack_hand(user)
-	else
-		..()
+/obj/item/stack/flag/solgov
+	name = "sol gov flags"
+	singular_name = "sol gov flag"
+	icon_state = "solgovflag"
+	fringe = "solgovflag_fringe"
+	desc = "A portable flag with the Sol Government symbol on it. I claim this land for Sol!"
+	light_color = COLOR_BLUE
 
-/obj/item/stack/flag/attack_hand(user as mob)
+/obj/item/stack/flag/attackby(var/obj/item/W, var/mob/user)
 	if(upright)
-		upright = 0
-		icon_state = base_state
-		anchored = 0
-		src.visible_message("<b>[user]</b> knocks down [src].")
-	else
-		..()
+		attack_hand(user)
+		return
+	return ..()
 
-/obj/item/stack/flag/attack_self(mob/user as mob)
+/obj/item/stack/flag/attack_hand(var/mob/user)
+	if(upright)
+		knock_down()
+		user.visible_message("\The [user] knocks down \the [singular_name].")
+		return
+	return ..()
 
-	var/obj/item/stack/flag/F = locate() in get_turf(src)
-
+/obj/item/stack/flag/attack_self(var/mob/user)
 	var/turf/T = get_turf(src)
-	if(!T || !istype(T,/turf/simulated/floor/asteroid))
-		user << "The flag won't stand up in this terrain."
+
+	if(istype(T, /turf/space) || istype(T, /turf/simulated/open))
+		to_chat(user, "<span class='warning'>There's no solid surface to plant the flag on.</span>")
 		return
 
-	if(F && F.upright)
-		user << "There is already a flag here."
-		return
+	for(var/obj/item/stack/flag/F in T)
+		if(F.upright)
+			to_chat(user, "<span class='warning'>\The [F] is already planted here.</span>")
+			return
 
-	var/obj/item/stack/flag/newflag = new src.type(T)
-	newflag.amount = 1
-	newflag.upright = 1
+	if(use(1)) // Don't skip use() checks even if you only need one! Stacks with the amount of 0 are possible, e.g. on synthetics!
+		var/obj/item/stack/flag/newflag = new src.type(T, 1)
+		newflag.set_up()
+		if(istype(T, /turf/simulated/floor/asteroid) || istype(T, /turf/simulated/floor/exoplanet))
+			user.visible_message("\The [user] plants \the [newflag.singular_name] firmly in the ground.")
+		else
+			user.visible_message("\The [user] attaches \the [newflag.singular_name] firmly to the ground.")
+
+/obj/item/stack/flag/proc/set_up()
+	pixel_x = 0
+	pixel_y = 0
+	upright = 1
 	anchored = 1
-	newflag.name = newflag.singular_name
-	newflag.icon_state = "[newflag.base_state]_open"
-	newflag.visible_message("<b>[user]</b> plants [newflag] firmly in the ground.")
-	src.use(1)
+	icon_state = "[initial(icon_state)]_open"
+	if(fringe)
+		set_light(2, 0.1) // Very dim so the rest of the flag is barely visible - if the turf is completely dark, you can't see anything on it, no matter what
+		var/image/addon = image(icon = src.icon, icon_state = fringe) // Bright fringe
+		addon.layer = ABOVE_LIGHTING_LAYER
+		addon.plane = EFFECTS_ABOVE_LIGHTING_PLANE
+		overlays += addon
+
+/obj/item/stack/flag/proc/knock_down()
+	pixel_x = rand(-randpixel, randpixel)
+	pixel_y = rand(-randpixel, randpixel)
+	upright = 0
+	anchored = 0
+	icon_state = initial(icon_state)
+	overlays.Cut()
+	set_light(0)
+
+
+
+/**************************Plasma Cutter*****************************/
+
+/obj/item/weapon/gun/energy/plasmacutter/mounted
+	name = "mounted plasma cutter"
+	self_recharge = 1
+	use_external_power = 1
+
+/obj/item/rig_module/mounted/plasmacutter
+	name = "mounted plasma cutter"
+	desc = "A knee-mounted plasma cutter. Don't question it."
+	icon_state = "plasmacutter"
+	interface_name = "mounted plasma cutter"
+	interface_desc = "A knee-mounted suit-powered plasma cutter. Don't question it."
+	origin_tech = list(TECH_MATERIAL = 4, TECH_PHORON = 3, TECH_ENGINEERING = 3)
+	gun = /obj/item/weapon/gun/energy/plasmacutter/mounted
+
+/obj/item/weapon/gun/energy/plasmacutter
+	name = "plasma cutter"
+	desc = "A mining tool capable of expelling concentrated plasma bursts. You could use it to cut limbs off of xenos! Or, you know, mine stuff."
+	charge_meter = 0
+	icon = 'icons/obj/tools.dmi'
+	icon_state = "plasmacutter"
+	item_state = "plasmacutter"
+	fire_sound = 'sound/weapons/plasma_cutter.ogg'
+	slot_flags = SLOT_BELT|SLOT_BACK
+	w_class = 3
+	force = 15
+	sharp = 1
+	edge = 1
+	origin_tech = list(TECH_MATERIAL = 4, TECH_PHORON = 3, TECH_ENGINEERING = 3)
+	matter = list(DEFAULT_WALL_MATERIAL = 4000)
+	projectile_type = /obj/item/projectile/beam/plasmacutter
+	max_shots = 10
+	self_recharge = 1
+
+/obj/item/projectile/beam/plasmacutter
+	name = "plasma arc"
+	icon_state = "omnilaser"
+	damage = 15
+	damage_type = BURN
+	check_armour = "laser"
+	kill_count = 5
+	pass_flags = PASS_FLAG_TABLE
+
+	muzzle_type = /obj/effect/projectile/trilaser/muzzle
+	tracer_type = /obj/effect/projectile/trilaser/tracer
+	impact_type = /obj/effect/projectile/trilaser/impact
+
+/obj/item/projectile/beam/plasmacutter/on_impact(var/atom/A)
+	if(istype(A, /turf/simulated/mineral))
+		var/turf/simulated/mineral/M = A
+		if(prob(33))
+			M.GetDrilled(1)
+			return
+		else
+			M.emitter_blasts_taken += 2
+	. = ..()

@@ -41,7 +41,7 @@
 	..()
 
 
-/obj/machinery/power/am_control_unit/process()
+/obj/machinery/power/am_control_unit/Process()
 	if(exploding)
 		explosion(get_turf(src),8,12,18,12)
 		if(src) qdel(src)
@@ -101,19 +101,6 @@
 	return 0
 
 
-/obj/machinery/power/am_control_unit/blob_act()
-	stability -= 20
-	if(prob(100-stability))//Might infect the rest of the machine
-		for(var/obj/machinery/am_shielding/AMS in linked_shielding)
-			AMS.blob_act()
-		spawn(0)
-			//Likely explode
-			qdel(src)
-		return
-	check_stability()
-	return
-
-
 /obj/machinery/power/am_control_unit/ex_act(severity)
 	switch(severity)
 		if(1.0)
@@ -133,8 +120,8 @@
 
 
 /obj/machinery/power/am_control_unit/power_change()
-	..()
-	if(stat & NOPOWER && active)
+	. = ..()
+	if((stat & NOPOWER) && active)
 		toggle_power()
 	return
 
@@ -147,7 +134,7 @@
 
 /obj/machinery/power/am_control_unit/attackby(obj/item/W, mob/user)
 	if(!istype(W) || !user) return
-	if(istype(W, /obj/item/weapon/wrench))
+	if(isWrench(W))
 		if(!anchored)
 			playsound(src.loc, 'sound/items/Ratchet.ogg', 75, 1)
 			user.visible_message("[user.name] secures the [src.name] to the floor.", \
@@ -163,12 +150,12 @@
 			src.anchored = 0
 			disconnect_from_network()
 		else
-			user << "\red Once bolted and linked to a shielding unit it the [src.name] is unable to be moved!"
+			to_chat(user, "<span class='warning'>Once bolted and linked to a shielding unit it the [src.name] is unable to be moved!</span>")
 		return
 
 	if(istype(W, /obj/item/weapon/am_containment))
 		if(fueljar)
-			user << "\red There is already a [fueljar] inside!"
+			to_chat(user, "<span class='warning'>There is already a [fueljar] inside!</span>")
 			return
 		fueljar = W
 		user.remove_from_mob(W)

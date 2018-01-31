@@ -17,6 +17,7 @@
 	var/lethal = 0
 	var/locked = 1
 	var/area/control_area //can be area name, path or nothing.
+	var/mob/living/silicon/ai/master_ai
 
 	var/check_arrest = 1	//checks if the perp is set to arrest
 	var/check_records = 1	//checks if a security record exists at all
@@ -42,9 +43,9 @@
 		var/area/A = control_area
 		if(A && istype(A))
 			A.turret_controls -= src
-	..()
+	. = ..()
 
-/obj/machinery/turretid/initialize()
+/obj/machinery/turretid/Initialize()
 	if(!control_area)
 		control_area = get_area(src)
 	else if(istext(control_area))
@@ -61,15 +62,20 @@
 			control_area = null
 
 	power_change() //Checks power and initial settings
-	return
+	. = ..()
 
 /obj/machinery/turretid/proc/isLocked(mob/user)
-	if(ailock && user.isSilicon())
-		user << "<span class='notice'>There seems to be a firewall preventing you from accessing this device.</span>"
+	if(ailock && issilicon(user))
+		to_chat(user, "<span class='notice'>There seems to be a firewall preventing you from accessing this device.</span>")
 		return 1
 
-	if(locked && !user.isSilicon())
-		user << "<span class='notice'>Access denied.</span>"
+	if(malf_upgraded && master_ai)
+		if((user == master_ai) || (user in master_ai.connected_robots))
+			return 0
+		return 1
+
+	if(locked && !issilicon(user))
+		to_chat(user, "<span class='notice'>Access denied.</span>")
 		return 1
 
 	return 0
@@ -87,16 +93,16 @@
 	if(istype(W, /obj/item/weapon/card/id)||istype(W, /obj/item/device/pda))
 		if(src.allowed(usr))
 			if(emagged)
-				user << "<span class='notice'>The turret control is unresponsive.</span>"
+				to_chat(user, "<span class='notice'>The turret control is unresponsive.</span>")
 			else
 				locked = !locked
-				user << "<span class='notice'>You [ locked ? "lock" : "unlock"] the panel.</span>"
+				to_chat(user, "<span class='notice'>You [ locked ? "lock" : "unlock"] the panel.</span>")
 		return
 	return ..()
-	
+
 /obj/machinery/turretid/emag_act(var/remaining_charges, var/mob/user)
 	if(!emagged)
-		user << "<span class='danger'>You short out the turret controls' access analysis module.</span>"
+		to_chat(user, "<span class='danger'>You short out the turret controls' access analysis module.</span>")
 		emagged = 1
 		locked = 0
 		ailock = 0
@@ -132,7 +138,7 @@
 		settings[++settings.len] = list("category" = "Check misc. Lifeforms", "setting" = "check_anomalies", "value" = check_anomalies)
 		data["settings"] = settings
 
-	ui = nanomanager.try_update_ui(user, src, ui_key, ui, data, force_open)
+	ui = GLOB.nanomanager.try_update_ui(user, src, ui_key, ui, data, force_open)
 	if (!ui)
 		ui = new(user, src, ui_key, "turret_control.tmpl", "Turret Controls", 500, 300)
 		ui.set_initial_data(data)
@@ -143,12 +149,19 @@
 	if(..())
 		return 1
 
+
 	if(href_list["command"] && href_list["value"])
+		var/log_action = null
+
+		var/list/toggle = list("disabled","enabled")
+
 		var/value = text2num(href_list["value"])
 		if(href_list["command"] == "enable")
 			enabled = value
+			log_action = "[toggle[enabled+1]] the turrets"
 		else if(href_list["command"] == "lethal")
 			lethal = value
+			log_action = "[toggle[lethal+1]] the turrets lethal mode."
 		else if(href_list["command"] == "check_synth")
 			check_synth = value
 		else if(href_list["command"] == "check_weapons")
@@ -161,6 +174,10 @@
 			check_access = value
 		else if(href_list["command"] == "check_anomalies")
 			check_anomalies = value
+
+		if(!isnull(log_action))
+			log_admin("[key_name(usr)] has [log_action]")
+			message_admins("[key_name_admin(usr)] has [log_action]", 1)
 
 		updateTurrets()
 		return 1
@@ -184,9 +201,9 @@
 	update_icon()
 
 /obj/machinery/turretid/power_change()
-	..()
-	updateTurrets()
-	update_icon()
+	. = ..()
+	if(.)
+		updateTurrets()
 
 /obj/machinery/turretid/update_icon()
 	..()
@@ -199,7 +216,7 @@
 			set_light(1.5, 1,"#990000")
 		else
 			icon_state = "control_stun"
-			set_light(1.5, 1,"#FF9900")
+			set_light(1.5, 1,"#ff9900")
 	else
 		icon_state = "control_standby"
 		set_light(1.5, 1,"#003300")
@@ -224,3 +241,13 @@
 				updateTurrets()
 
 	..()
+
+
+/obj/machinery/turretid/malf_upgrade(var/mob/living/silicon/ai/user)
+	..()
+	malf_upgraded = 1
+	locked = 1
+	ailock = 0
+	to_chat(user, "\The [src] has been upgraded. It has been locked and can not be tampered with by anyone but you and your cyborgs.")
+	master_ai = user
+	return 1

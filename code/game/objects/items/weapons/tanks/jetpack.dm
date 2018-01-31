@@ -4,10 +4,11 @@
 	name = "jetpack (empty)"
 	desc = "A tank of compressed gas for use as propulsion in zero-gravity areas. Use with caution."
 	icon_state = "jetpack"
-	w_class = 4.0
+	gauge_icon = null
+	w_class = ITEM_SIZE_HUGE
 	item_state = "jetpack"
 	distribute_pressure = ONE_ATMOSPHERE*O2STANDARD
-	var/datum/effect/effect/system/ion_trail_follow/ion_trail
+	var/datum/effect/effect/system/trail/ion/ion_trail
 	var/on = 0.0
 	var/stabilization_on = 0
 	var/volume_rate = 500              //Needed for borg jetpack transfer
@@ -15,22 +16,23 @@
 
 /obj/item/weapon/tank/jetpack/New()
 	..()
-	src.ion_trail = new /datum/effect/effect/system/ion_trail_follow()
+	src.ion_trail = new /datum/effect/effect/system/trail/ion()
 	src.ion_trail.set_up(src)
 
-/obj/item/weapon/tank/jetpack/examine(mob/user)
-	if(!..(user, 0))
-		return
+/obj/item/weapon/tank/jetpack/Destroy()
+	qdel(ion_trail)
+	..()
 
-	if(air_contents.gas["oxygen"] < 10)
-		user << text("<span class='danger'>The meter on \the [src] indicates you are almost out of air!</span>")
-		playsound(user, 'sound/effects/alert.ogg', 50, 1)
+/obj/item/weapon/tank/jetpack/examine(mob/living/user)
+	. = ..()
+	if(air_contents.total_moles < 5)
+		to_chat(user, "<span class='danger'>The meter on \the [src] indicates you are almost out of gas!</span>")
 
 /obj/item/weapon/tank/jetpack/verb/toggle_rockets()
 	set name = "Toggle Jetpack Stabilization"
 	set category = "Object"
 	src.stabilization_on = !( src.stabilization_on )
-	usr << "You toggle the stabilization [stabilization_on? "on":"off"]."
+	to_chat(usr, "You toggle the stabilization [stabilization_on? "on":"off"].")
 
 /obj/item/weapon/tank/jetpack/verb/toggle()
 	set name = "Toggle Jetpack"
@@ -49,7 +51,7 @@
 		M.update_inv_back()
 		M.update_action_buttons()
 
-	usr << "You toggle the thrusters [on? "on":"off"]."
+	to_chat(usr, "You toggle the thrusters [on? "on":"off"].")
 
 /obj/item/weapon/tank/jetpack/proc/allow_thrust(num, mob/living/user as mob)
 	if(!(src.on))
@@ -102,19 +104,7 @@
 
 /obj/item/weapon/tank/jetpack/carbondioxide/New()
 	..()
-	src.ion_trail = new /datum/effect/effect/system/ion_trail_follow()
-	src.ion_trail.set_up(src)
-	//src.air_contents.carbon_dioxide = (6*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C)
 	air_contents.adjust_gas("carbon_dioxide", (6*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
-	return
-
-/obj/item/weapon/tank/jetpack/carbondioxide/examine(mob/user)
-	if(!..(0))
-		return
-
-	if(air_contents.gas["carbon_dioxide"] < 10)
-		user << text("<span class='danger'>The meter on \the [src] indicates you are almost out of carbon dioxide!</span>")
-		playsound(user, 'sound/effects/alert.ogg', 50, 1)
 	return
 
 /obj/item/weapon/tank/jetpack/rig
@@ -122,7 +112,8 @@
 	var/obj/item/weapon/rig/holder
 
 /obj/item/weapon/tank/jetpack/rig/examine()
-	usr << "It's a jetpack. If you can see this, report it on the bug tracker."
+	. = ..()
+	to_chat(usr, "It's a jetpack. If you can see this, report it on the bug tracker.")
 	return 0
 
 /obj/item/weapon/tank/jetpack/rig/allow_thrust(num, mob/living/user as mob)

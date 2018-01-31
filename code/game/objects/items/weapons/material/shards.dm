@@ -5,9 +5,10 @@
 	icon = 'icons/obj/shards.dmi'
 	desc = "Made of nothing. How does this even exist?" // set based on material, if this desc is visible it's a bug (shards default to being made of glass)
 	icon_state = "large"
+	randpixel = 8
 	sharp = 1
 	edge = 1
-	w_class = 2
+	w_class = ITEM_SIZE_SMALL
 	force_divisor = 0.2 // 6 with hardness 30 (glass)
 	thrown_force_divisor = 0.4 // 4 with weight 15 (glass)
 	item_state = "shard-glass"
@@ -16,19 +17,12 @@
 	unbreakable = 1 //It's already broken.
 	drops_debris = 0
 
-/obj/item/weapon/material/shard/suicide_act(mob/user)
-	viewers(user) << pick("<span class='danger'>\The [user] is slitting \his wrists with \the [src]! It looks like \he's trying to commit suicide.</span>",
-	                      "<span class='danger'>\The [user] is slitting \his throat with \the [src]! It looks like \he's trying to commit suicide.</span>")
-	return (BRUTELOSS)
-
 /obj/item/weapon/material/shard/set_material(var/new_material)
 	..(new_material)
 	if(!istype(material))
 		return
 
 	icon_state = "[material.shard_icon][pick("large", "medium", "small")]"
-	pixel_x = rand(-8, 8)
-	pixel_y = rand(-8, 8)
 	update_icon()
 
 	if(material.shard_type)
@@ -52,7 +46,7 @@
 		alpha = 255
 
 /obj/item/weapon/material/shard/attackby(obj/item/weapon/W as obj, mob/user as mob)
-	if(istype(W, /obj/item/weapon/weldingtool) && material.shard_can_repair)
+	if(isWelder(W) && material.shard_can_repair)
 		var/obj/item/weapon/weldingtool/WT = W
 		if(WT.remove_fuel(0, user))
 			material.place_sheet(loc)
@@ -62,43 +56,47 @@
 
 /obj/item/weapon/material/shard/Crossed(AM as mob|obj)
 	..()
-	
-	if(ismob(AM))
+	if(isliving(AM))
 		var/mob/M = AM
-		
+
 		if(M.buckled) //wheelchairs, office chairs, rollerbeds
 			return
-		
-		M << "<span class='danger'>You step on \the [src]!</span>"
+
 		playsound(src.loc, 'sound/effects/glass_step.ogg', 50, 1) // not sure how to handle metal shards with sounds
 		if(ishuman(M))
 			var/mob/living/carbon/human/H = M
 
-			if(H.species.siemens_coefficient<0.5) //Thick skin.
+			if(H.species.siemens_coefficient<0.5 || (H.species.species_flags & (SPECIES_FLAG_NO_EMBED|SPECIES_FLAG_NO_MINOR_CUT))) //Thick skin.
 				return
 
 			if( H.shoes || ( H.wear_suit && (H.wear_suit.body_parts_covered & FEET) ) )
 				return
-			
-			var/list/check = list("l_foot", "r_foot")
+
+			to_chat(M, "<span class='danger'>You step on \the [src]!</span>")
+
+			var/list/check = list(BP_L_FOOT, BP_R_FOOT)
 			while(check.len)
 				var/picked = pick(check)
 				var/obj/item/organ/external/affecting = H.get_organ(picked)
 				if(affecting)
-					if(affecting.status & ORGAN_ROBOT)
+					if(affecting.robotic >= ORGAN_ROBOT)
 						return
-					if(affecting.take_damage(5, 0))
-						H.UpdateDamageIcon()
+					affecting.take_damage(5, 0)
 					H.updatehealth()
-					if(!(H.species.flags & NO_PAIN))
+					if(affecting.can_feel_pain())
 						H.Weaken(3)
 					return
 				check -= picked
 			return
 
 // Preset types - left here for the code that uses them
+/obj/item/weapon/material/shrapnel
+	name = "shrapnel"
+	default_material = DEFAULT_WALL_MATERIAL
+	w_class = ITEM_SIZE_TINY	//it's real small
+
 /obj/item/weapon/material/shard/shrapnel/New(loc)
-	..(loc, "steel")
+	..(loc, DEFAULT_WALL_MATERIAL)
 
 /obj/item/weapon/material/shard/phoron/New(loc)
 	..(loc, "phglass")

@@ -7,8 +7,6 @@
 	icon_state = "mecha_equip"
 	force = 5
 	origin_tech = list(TECH_MATERIAL = 2)
-	construction_time = 100
-	construction_cost = list(DEFAULT_WALL_MATERIAL=10000)
 	var/equip_cooldown = 0
 	var/equip_ready = 1
 	var/energy_drain = 0
@@ -24,7 +22,6 @@
 	if(target && chassis)
 		return 1
 	return 0
-
 
 /obj/item/mecha_parts/mecha_equipment/New()
 	..()
@@ -53,9 +50,9 @@
 		chassis.occupant_message("<font color='red'>The [src] is destroyed!</font>")
 		chassis.log_append_to_last("[src] is destroyed.",1)
 		if(istype(src, /obj/item/mecha_parts/mecha_equipment/weapon))
-			chassis.occupant << sound('sound/mecha/weapdestr.ogg',volume=50)
+			sound_to(chassis.occupant, sound('sound/mecha/weapdestr.ogg',volume=50))
 		else
-			chassis.occupant << sound('sound/mecha/critdestr.ogg',volume=50)
+			sound_to(chassis.occupant, sound('sound/mecha/critdestr.ogg',volume=50))
 	spawn
 		qdel(src)
 	return

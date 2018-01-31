@@ -3,11 +3,11 @@
 	desc = "A security robot.  He looks less than thrilled."
 	icon = 'icons/obj/aibots.dmi'
 	icon_state = "ed2090"
+	attack_state = "ed209-c"
 	density = 1
 	health = 100
 	maxHealth = 100
 
-	bot_version = "2.5"
 	is_ranged = 1
 	preparing_arrest_sounds = new()
 
@@ -20,10 +20,7 @@
 	var/last_shot = 0
 
 /mob/living/bot/secbot/ed209/update_icons()
-	if(on && is_attacking)
-		icon_state = "ed209-c"
-	else
-		icon_state = "ed209[on]"
+	icon_state = "ed2090"
 
 /mob/living/bot/secbot/ed209/explode()
 	visible_message("<span class='warning'>[src] blows apart!</span>")
@@ -50,31 +47,23 @@
 	new /obj/effect/decal/cleanable/blood/oil(Tsec)
 	qdel(src)
 
+/mob/living/bot/secbot/ed209/handleRangedTarget()
+	RangedAttack(target)
+
 /mob/living/bot/secbot/ed209/RangedAttack(var/atom/A)
 	if(last_shot + shot_delay > world.time)
-		src << "You are not ready to fire yet!"
+		to_chat(src, "You are not ready to fire yet!")
 		return
 
 	last_shot = world.time
-	var/turf/T = get_turf(src)
-	var/turf/U = get_turf(A)
-
 	var/projectile = /obj/item/projectile/beam/stun
 	if(emagged)
 		projectile = /obj/item/projectile/beam
 
 	playsound(loc, emagged ? 'sound/weapons/Laser.ogg' : 'sound/weapons/Taser.ogg', 50, 1)
 	var/obj/item/projectile/P = new projectile(loc)
-
-	P.original = A
-	P.starting = T
-	P.current = T
-	P.yo = U.y - T.y
-	P.xo = U.x - T.x
-	spawn()
-		P.process()
-	return
-
+	var/def_zone = get_exposed_defense_zone(A)
+	P.launch(A, def_zone)
 // Assembly
 
 /obj/item/weapon/secbot_assembly/ed209_assembly
@@ -104,7 +93,7 @@
 				user.drop_item()
 				qdel(W)
 				build_step++
-				user << "<span class='notice'>You add the robot leg to [src].</span>"
+				to_chat(user, "<span class='notice'>You add the robot leg to [src].</span>")
 				name = "legs/frame assembly"
 				if(build_step == 1)
 					item_state = "ed209_leg"
@@ -114,28 +103,32 @@
 					icon_state = "ed209_legs"
 
 		if(2)
-			if(istype(W, /obj/item/clothing/suit/storage/vest))
+			if(istype(W, /obj/item/clothing/suit/storage/vest) || istype(W, /obj/item/clothing/suit/armor/pcarrier) || istype(W, /obj/item/clothing/accessory/armorplate))
+				if(istype(W, /obj/item/clothing/suit/armor/pcarrier))
+					if(!locate(/obj/item/clothing/accessory/armorplate) in W.contents)
+						to_chat(user, "There's no armor plates on this [W].")
+						return
 				user.drop_item()
 				qdel(W)
 				build_step++
-				user << "<span class='notice'>You add the armor to [src].</span>"
+				to_chat(user, "<span class='notice'>You add [W] to [src].</span>")
 				name = "vest/legs/frame assembly"
 				item_state = "ed209_shell"
 				icon_state = "ed209_shell"
 
 		if(3)
-			if(istype(W, /obj/item/weapon/weldingtool))
+			if(isWelder(W))
 				var/obj/item/weapon/weldingtool/WT = W
 				if(WT.remove_fuel(0, user))
 					build_step++
 					name = "shielded frame assembly"
-					user << "<span class='notice'>You welded the vest to [src].</span>"
+					to_chat(user, "<span class='notice'>You welded the vest to [src].</span>")
 		if(4)
 			if(istype(W, /obj/item/clothing/head/helmet))
 				user.drop_item()
 				qdel(W)
 				build_step++
-				user << "<span class='notice'>You add the helmet to [src].</span>"
+				to_chat(user, "<span class='notice'>You add the helmet to [src].</span>")
 				name = "covered and shielded frame assembly"
 				item_state = "ed209_hat"
 				icon_state = "ed209_hat"
@@ -145,22 +138,22 @@
 				user.drop_item()
 				qdel(W)
 				build_step++
-				user << "<span class='notice'>You add the prox sensor to [src].</span>"
+				to_chat(user, "<span class='notice'>You add the prox sensor to [src].</span>")
 				name = "covered, shielded and sensored frame assembly"
 				item_state = "ed209_prox"
 				icon_state = "ed209_prox"
 
 		if(6)
-			if(istype(W, /obj/item/stack/cable_coil))
+			if(isCoil(W))
 				var/obj/item/stack/cable_coil/C = W
 				if (C.get_amount() < 1)
-					user << "<span class='warning'>You need one coil of wire to wire [src].</span>"
+					to_chat(user, "<span class='warning'>You need one coil of wire to wire [src].</span>")
 					return
-				user << "<span class='notice'>You start to wire [src].</span>"
-				if(do_after(user, 40) && build_step == 6)
+				to_chat(user, "<span class='notice'>You start to wire [src].</span>")
+				if(do_after(user, 40, src) && build_step == 6)
 					if(C.use(1))
 						build_step++
-						user << "<span class='notice'>You wire the ED-209 assembly.</span>"
+						to_chat(user, "<span class='notice'>You wire the ED-209 assembly.</span>")
 						name = "wired ED-209 assembly"
 				return
 
@@ -168,27 +161,27 @@
 			if(istype(W, /obj/item/weapon/gun/energy/taser))
 				name = "taser ED-209 assembly"
 				build_step++
-				user << "<span class='notice'>You add [W] to [src].</span>"
+				to_chat(user, "<span class='notice'>You add [W] to [src].</span>")
 				item_state = "ed209_taser"
 				icon_state = "ed209_taser"
 				user.drop_item()
 				qdel(W)
 
 		if(8)
-			if(istype(W, /obj/item/weapon/screwdriver))
+			if(isScrewdriver(W))
 				playsound(src.loc, 'sound/items/Screwdriver.ogg', 100, 1)
 				var/turf/T = get_turf(user)
-				user << "<span class='notice'>Now attaching the gun to the frame...</span>"
+				to_chat(user, "<span class='notice'>Now attaching the gun to the frame...</span>")
 				sleep(40)
 				if(get_turf(user) == T && build_step == 8)
 					build_step++
 					name = "armed [name]"
-					user << "<span class='notice'>Taser gun attached.</span>"
+					to_chat(user, "<span class='notice'>Taser gun attached.</span>")
 
 		if(9)
 			if(istype(W, /obj/item/weapon/cell))
 				build_step++
-				user << "<span class='notice'>You complete the ED-209.</span>"
+				to_chat(user, "<span class='notice'>You complete the ED-209.</span>")
 				var/turf/T = get_turf(src)
 				new /mob/living/bot/secbot/ed209(T,created_name,lasercolor)
 				user.drop_item()

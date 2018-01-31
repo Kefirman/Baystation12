@@ -1,5 +1,6 @@
 /datum/admin_secret_item/admin_secret/prison_warp
 	name = "Prison Warp"
+	warn_before_use = TRUE
 
 /datum/admin_secret_item/admin_secret/prison_warp/can_execute(var/mob/user)
 	if(!ticker) return 0
@@ -9,10 +10,10 @@
 	. = ..()
 	if(!.)
 		return
-	for(var/mob/living/carbon/human/H in mob_list)
+	for(var/mob/living/carbon/human/H in SSmobs.mob_list)
 		var/turf/T = get_turf(H)
 		var/security = 0
-		if((T && T in config.admin_levels) || prisonwarped.Find(H))
+		if((T && (T in GLOB.using_map.admin_levels)) || GLOB.prisonwarped.Find(H))
 		//don't warp them if they aren't ready or are already there
 			continue
 		H.Paralyse(5)
@@ -29,10 +30,10 @@
 					//don't strip organs
 				H.drop_from_inventory(W)
 			//teleport person to cell
-			H.loc = pick(prisonwarp)
+			H.forceMove(pick(GLOB.prisonwarp))
 			H.equip_to_slot_or_del(new /obj/item/clothing/under/color/orange(H), slot_w_uniform)
 			H.equip_to_slot_or_del(new /obj/item/clothing/shoes/orange(H), slot_shoes)
 		else
 			//teleport security person
-			H.loc = pick(prisonsecuritywarp)
-		prisonwarped += H
+			H.forceMove(pick(GLOB.prisonsecuritywarp))
+		GLOB.prisonwarped |= H

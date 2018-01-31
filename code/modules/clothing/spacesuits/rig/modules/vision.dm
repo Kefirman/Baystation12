@@ -50,6 +50,8 @@
 	usable = 1
 	toggleable = 1
 	disruptive = 0
+	module_cooldown = 0
+	active_power_cost = 100
 
 	engage_string = "Cycle Visor Mode"
 	activate_string = "Enable Visor"
@@ -85,7 +87,7 @@
 	name = "hardsuit meson scanner"
 	desc = "A layered, translucent visor system for a hardsuit."
 	icon_state = "meson"
-
+	origin_tech = list(TECH_MAGNET = 2, TECH_ENGINEERING = 5)
 	usable = 0
 
 	interface_name = "meson scanner"
@@ -111,7 +113,7 @@
 	name = "hardsuit night vision interface"
 	desc = "A multi input night vision system for a hardsuit."
 	icon_state = "night"
-
+	origin_tech = list(TECH_MAGNET = 6, TECH_ENGINEERING = 6)
 	usable = 0
 
 	interface_name = "night vision interface"
@@ -124,7 +126,7 @@
 	name = "hardsuit security hud"
 	desc = "A simple tactical information system for a hardsuit."
 	icon_state = "securityhud"
-
+	origin_tech = list(TECH_MAGNET = 3, TECH_BIO = 2, TECH_ENGINEERING = 5)
 	usable = 0
 
 	interface_name = "security HUD"
@@ -137,7 +139,7 @@
 	name = "hardsuit medical hud"
 	desc = "A simple medical status indicator for a hardsuit."
 	icon_state = "healthhud"
-
+	origin_tech = list(TECH_MAGNET = 3, TECH_BIO = 2, TECH_ENGINEERING = 5)
 	usable = 0
 
 	interface_name = "medical HUD"
@@ -160,7 +162,7 @@
 
 	// Don't cycle if this engage() is being called by activate().
 	if(starting_up)
-		holder.wearer << "<font color='blue'>You activate your visual sensors.</font>"
+		to_chat(holder.wearer, "<font color='blue'>You activate your visual sensors.</font>")
 		return 1
 
 	if(vision_modes.len > 1)
@@ -169,9 +171,9 @@
 			vision_index = 1
 		vision = vision_modes[vision_index]
 
-		holder.wearer << "<font color='blue'>You cycle your sensors to <b>[vision.mode]</b> mode.</font>"
+		to_chat(holder.wearer, "<font color='blue'>You cycle your sensors to <b>[vision.mode]</b> mode.</font>")
 	else
-		holder.wearer << "<font color='blue'>Your sensors only have one mode.</font>"
+		to_chat(holder.wearer, "<font color='blue'>Your sensors only have one mode.</font>")
 	return 1
 
 /obj/item/rig_module/vision/New()

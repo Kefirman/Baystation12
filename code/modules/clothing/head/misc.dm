@@ -18,6 +18,20 @@
 	slot_flags = SLOT_HEAD | SLOT_EARS
 	body_parts_covered = 0
 
+/obj/item/clothing/head/hairflower/blue
+	icon_state = "hairflower_blue"
+
+/obj/item/clothing/head/hairflower/pink
+	icon_state = "hairflower_pink"
+
+/obj/item/clothing/head/hairflower/yellow
+	icon_state = "hairflower_yellow"
+
+/obj/item/clothing/head/hairflower/bow
+	icon_state = "bow"
+	name = "hair bow"
+	desc = "A ribbon tied into a bow with a clip on the back to attach to hair."
+
 /obj/item/clothing/head/powdered_wig
 	name = "powdered wig"
 	desc = "A powdered wig."
@@ -39,7 +53,7 @@
 	body_parts_covered = 0
 
 /obj/item/clothing/head/mailman
-	name = "station cap"
+	name = "mail cap"
 	icon_state = "mailman"
 	desc = "<i>Choo-choo</i>!"
 	body_parts_covered = 0
@@ -54,7 +68,7 @@
 
 /obj/item/clothing/head/hasturhood
 	name = "hastur's hood"
-	desc = "It's unspeakably stylish"
+	desc = "It's unspeakably stylish."
 	icon_state = "hasturhood"
 	flags_inv = BLOCKHAIR
 	body_parts_covered = HEAD|FACE|EYES
@@ -86,14 +100,6 @@
 	flags_inv = BLOCKHAIR
 	body_parts_covered = HEAD|FACE|EYES
 
-/obj/item/clothing/head/greenbandana
-	name = "green bandana"
-	desc = "It's a green bandana with some fine nanotech lining."
-	icon_state = "greenbandana"
-	item_state = "greenbandana"
-	flags_inv = 0
-	body_parts_covered = 0
-
 /obj/item/clothing/head/cardborg
 	name = "cardborg helmet"
 	desc = "A helmet made out of a box."
@@ -101,6 +107,10 @@
 	item_state = "cardborg_h"
 	flags_inv = HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE
 	body_parts_covered = HEAD|FACE|EYES
+
+/obj/item/clothing/head/cardborg/Initialize()
+	. = ..()
+	set_extension(src, /datum/extension/appearance, /datum/extension/appearance/cardborg)
 
 /obj/item/clothing/head/justice
 	name = "justice hat"
@@ -153,6 +163,18 @@
 	name = "pirate bandana"
 	desc = "Yarr."
 	icon_state = "bandana"
+	body_parts_covered = 0
+
+/obj/item/clothing/head/bandana/green
+	name = "green bandana"
+	desc = "It's a green bandana with some fine nanotech lining."
+	icon_state = "greenbandana"
+	item_state = "greenbandana"
+
+/obj/item/clothing/head/bandana/orange //themij: Taryn Kifer
+	name = "orange bandana"
+	desc = "An orange piece of cloth, worn on the head."
+	icon_state = "orange_bandana"
 
 /obj/item/clothing/head/bowler
 	name = "bowler-hat"
@@ -229,6 +251,7 @@
 		slot_r_hand_str = "xenos_helm",
 		)
 	desc = "A helmet made out of chitinous alien hide."
+	w_class = ITEM_SIZE_NORMAL
 	flags_inv = HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE|BLOCKHAIR
 	siemens_coefficient = 2.0
 	body_parts_covered = HEAD|FACE|EYES
@@ -242,11 +265,61 @@
 		slot_r_hand_str = "pwig",
 		)
 	flags_inv = BLOCKHAIR
-	siemens_coefficient = 2.0 //why is it so conductive?!
 	body_parts_covered = 0
 
-/obj/item/clothing/head/orangebandana //themij: Taryn Kifer
-	name = "orange bandana"
-	desc = "An orange piece of cloth, worn on the head."
-	icon_state = "orange_bandana"
+/obj/item/clothing/head/hijab
+	name = "hijab"
+	desc = "A veil which is wrapped to cover the head and chest."
+	icon_state = "hijab"
 	body_parts_covered = 0
+	flags_inv = BLOCKHAIR
+
+/obj/item/clothing/head/kippa
+	name = "kippa"
+	desc = "A small, brimless cap."
+	icon_state = "kippa"
+	body_parts_covered = 0
+
+/obj/item/clothing/head/turban
+	name = "turban"
+	desc = "A sturdy cloth, worn around the head."
+	icon_state = "turban"
+	body_parts_covered = 0
+	flags_inv = BLOCKHEADHAIR //Shows beards!
+
+/obj/item/clothing/head/cowboy_hat
+	name = "cowboy hat"
+	desc = "A wide-brimmed hat, in the prevalent style of America's frontier period. By SolGov law, you are required to wear this hat while watching True Grit."
+	icon_state = "cowboyhat"
+	item_state = "cowboy_hat"
+	body_parts_covered = 0
+
+/obj/item/clothing/head/taqiyah
+	name = "taqiyah"
+	desc = "A short, rounded skullcap usually worn for religious purposes."
+	icon_state = "taqiyah"
+	item_state = "taqiyah"
+	body_parts_covered = 0
+
+/obj/item/clothing/head/tank
+	name = "padded cap"
+	desc = "A padded skullcup for those prone to bumping their heads against hard surfaces."
+	icon_state = "tank"
+	flags_inv = BLOCKHEADHAIR
+	color = "#5f5f5f"
+	armor = list(melee = 20)
+
+/obj/item/clothing/head/tank/olive
+	color = "#727c58"
+
+/obj/item/clothing/head/tank/tan
+	color = "#ae9f79"
+
+/obj/item/clothing/head/helmet/facecover
+	name = "face cover"
+	desc = "A helmet made of plastic. It's completely opaque. This will stop the stare."
+	icon_state = "facecover"
+	tint = TINT_BLIND
+	flags_inv = HIDEMASK|HIDEEARS|HIDEEYES|HIDEFACE|BLOCKHAIR
+	body_parts_covered = HEAD|FACE|EYES
+	flash_protection = FLASH_PROTECTION_MAJOR

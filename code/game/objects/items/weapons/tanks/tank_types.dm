@@ -4,6 +4,7 @@
  *		Anesthetic
  *		Air
  *		Phoron
+ *		Hydrogen
  *		Emergency Oxygen
  */
 
@@ -17,24 +18,17 @@
 	distribute_pressure = ONE_ATMOSPHERE*O2STANDARD
 
 
-	New()
-		..()
-		air_contents.adjust_gas("oxygen", (6*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
-		return
-
-
-	examine(mob/user)
-		if(..(user, 0) && air_contents.gas["oxygen"] < 10)
-			user << text("<span class='warning'>The meter on \the [src] indicates you are almost out of oxygen!</span>")
-			//playsound(usr, 'sound/effects/alert.ogg', 50, 1)
+/obj/item/weapon/tank/oxygen/New()
+	..()
+	air_contents.adjust_gas("oxygen", (6*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
 
 
 /obj/item/weapon/tank/oxygen/yellow
-	desc = "A tank of oxygen, this one is yellow."
+	desc = "A tank of oxygen. This one is yellow."
 	icon_state = "oxygen_f"
 
 /obj/item/weapon/tank/oxygen/red
-	desc = "A tank of oxygen, this one is red."
+	desc = "A tank of oxygen. This one is red."
 	icon_state = "oxygen_fr"
 
 
@@ -64,12 +58,6 @@
 	desc = "Mixed anyone?"
 	icon_state = "oxygen"
 
-
-	examine(mob/user)
-		if(..(user, 0) && air_contents.gas["oxygen"] < 1 && loc==user)
-			user << "<span class='danger'>The meter on the [src.name] indicates you are almost out of air!</span>"
-			user << sound('sound/effects/alert.ogg')
-
 /obj/item/weapon/tank/air/New()
 	..()
 
@@ -85,7 +73,8 @@
 	name = "phoron tank"
 	desc = "Contains dangerous phoron. Do not inhale. Warning: extremely flammable."
 	icon_state = "phoron"
-	flags = CONDUCT
+	gauge_icon = null
+	obj_flags = OBJ_FLAG_CONDUCTIBLE
 	slot_flags = null	//they have no straps!
 
 
@@ -95,7 +84,22 @@
 	src.air_contents.adjust_gas("phoron", (3*ONE_ATMOSPHERE)*70/(R_IDEAL_GAS_EQUATION*T20C))
 	return
 
-/obj/item/weapon/tank/phoron/attackby(obj/item/weapon/W as obj, mob/user as mob)
+/*
+ * Hydrogen
+ */
+/obj/item/weapon/tank/hydrogen
+	name = "hydrogen tank"
+	desc = "Contains hydrogen. Warning: flammable."
+	icon_state = "hydrogen"
+	gauge_icon = null
+	obj_flags = OBJ_FLAG_CONDUCTIBLE
+	slot_flags = null
+
+/obj/item/weapon/tank/hydrogen/New()
+	..()
+	src.air_contents.adjust_gas("hydrogen", (3*ONE_ATMOSPHERE)*70/(R_IDEAL_GAS_EQUATION*T20C))
+
+/obj/item/weapon/tank/hydrogen/attackby(obj/item/weapon/W as obj, mob/user as mob)
 	..()
 
 	if (istype(W, /obj/item/weapon/flamethrower))
@@ -110,62 +114,57 @@
 /*
  * Emergency Oxygen
  */
-/obj/item/weapon/tank/emergency_oxygen
-	name = "emergency oxygen tank"
-	desc = "Used for emergencies. Contains very little oxygen, so try to conserve it until you actually need it."
+/obj/item/weapon/tank/emergency
+	name = "emergency tank"
 	icon_state = "emergency"
-	flags = CONDUCT
+	gauge_icon = "indicator_emergency"
+	gauge_cap = 4
+	obj_flags = OBJ_FLAG_CONDUCTIBLE
 	slot_flags = SLOT_BELT
-	w_class = 2.0
-	force = 4.0
+	w_class = ITEM_SIZE_SMALL
+	force = 4
 	distribute_pressure = ONE_ATMOSPHERE*O2STANDARD
 	volume = 2 //Tiny. Real life equivalents only have 21 breaths of oxygen in them. They're EMERGENCY tanks anyway -errorage (dangercon 2011)
 
+/obj/item/weapon/tank/emergency/oxygen
+	name = "emergency oxygen tank"
+	desc = "Used for emergencies. Contains very little oxygen, so try to conserve it until you actually need it."
+	icon_state = "emergency"
+	gauge_icon = "indicator_emergency"
 
-	New()
-		..()
-		src.air_contents.adjust_gas("oxygen", (3*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
+/obj/item/weapon/tank/emergency/oxygen/New()
+	..()
+	src.air_contents.adjust_gas("oxygen", (3*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
 
-		return
-
-
-	examine(mob/user)
-		if(..(user, 0) && air_contents.gas["oxygen"] < 0.2 && loc==user)
-			user << text("<span class='danger'>The meter on the [src.name] indicates you are almost out of air!</span>")
-			user << sound('sound/effects/alert.ogg')
-
-/obj/item/weapon/tank/emergency_oxygen/engi
+/obj/item/weapon/tank/emergency/oxygen/engi
 	name = "extended-capacity emergency oxygen tank"
 	icon_state = "emergency_engi"
 	volume = 6
 
-/obj/item/weapon/tank/emergency_oxygen/double
+/obj/item/weapon/tank/emergency/oxygen/double
 	name = "double emergency oxygen tank"
 	icon_state = "emergency_double"
+	gauge_icon = "indicator_emergency_double"
 	volume = 10
 
-/obj/item/weapon/tank/emergency_nitrogen
+
+/obj/item/weapon/tank/emergency/nitrogen
 	name = "emergency nitrogen tank"
 	desc = "An emergency air tank hastily painted red and issued to Vox crewmembers."
 	icon_state = "emergency_nitro"
-	flags = CONDUCT
-	slot_flags = SLOT_BELT
-	w_class = 2.0
-	force = 4.0
-	distribute_pressure = ONE_ATMOSPHERE*O2STANDARD
-	volume = 2
-	
-	New()
-		..()
-		src.air_contents.adjust_gas("nitrogen", (3*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
+	gauge_icon = "indicator_emergency"
 
-		return
+/obj/item/weapon/tank/emergency/nitrogen/New()
+	..()
+	src.air_contents.adjust_gas("nitrogen", (3*ONE_ATMOSPHERE)*volume/(R_IDEAL_GAS_EQUATION*T20C))
 
 
-	examine(mob/user)
-		if(..(user, 0) && air_contents.gas["nitrogen"] < 0.2 && loc==user)
-			user << text("<span class='danger'>The meter on \the [src] indicates you are almost out of air!</span>")
-			user << sound('sound/effects/alert.ogg')
+/obj/item/weapon/tank/emergency/nitrogen/double
+	name = "double emergency nitrogen tank"
+	icon_state = "emergency_double_nitrogen"
+	gauge_icon = "indicator_emergency_double"
+	volume = 10
+
 
 /*
  * Nitrogen
@@ -182,8 +181,3 @@
 
 	src.air_contents.adjust_gas("nitrogen", (3*ONE_ATMOSPHERE)*70/(R_IDEAL_GAS_EQUATION*T20C))
 	return
-
-/obj/item/weapon/tank/nitrogen/examine(mob/user)
-	if(..(user, 0) && air_contents.gas["nitrogen"] < 10)
-		user << text("<span class='danger'>The meter on \the [src] indicates you are almost out of nitrogen!</span>")
-		//playsound(user, 'sound/effects/alert.ogg', 50, 1)

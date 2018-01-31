@@ -3,8 +3,7 @@
 	desc = "A folder."
 	icon = 'icons/obj/bureaucracy.dmi'
 	icon_state = "folder"
-	w_class = 2
-	pressure_resistance = 2
+	w_class = ITEM_SIZE_SMALL
 
 /obj/item/weapon/folder/blue
 	desc = "A blue folder."
@@ -22,6 +21,10 @@
 	desc = "A white folder."
 	icon_state = "folder_white"
 
+/obj/item/weapon/folder/nt
+	desc = "A NanoTrasen folder."
+	icon_state = "folder_nt"
+
 /obj/item/weapon/folder/update_icon()
 	overlays.Cut()
 	if(contents.len)
@@ -32,7 +35,7 @@
 	if(istype(W, /obj/item/weapon/paper) || istype(W, /obj/item/weapon/photo) || istype(W, /obj/item/weapon/paper_bundle))
 		user.drop_item()
 		W.loc = src
-		user << "<span class='notice'>You put the [W] into \the [src].</span>"
+		to_chat(user, "<span class='notice'>You put the [W] into \the [src].</span>")
 		update_icon()
 	else if(istype(W, /obj/item/weapon/pen))
 		var/n_name = sanitizeSafe(input(usr, "What would you like to label the folder?", "Folder Labelling", null)  as text, MAX_NAME_LEN)
@@ -70,7 +73,7 @@
 		else if(href_list["read"])
 			var/obj/item/weapon/paper/P = locate(href_list["read"])
 			if(P && (P.loc == src) && istype(P))
-				if(!(istype(usr, /mob/living/carbon/human) || istype(usr, /mob/dead/observer) || istype(usr, /mob/living/silicon)))
+				if(!(istype(usr, /mob/living/carbon/human) || isghost(usr) || istype(usr, /mob/living/silicon)))
 					usr << browse("<HTML><HEAD><TITLE>[P.name]</TITLE></HEAD><BODY>[stars(P.info)][P.stamps]</BODY></HTML>", "window=[P.name]")
 					onclose(usr, "[P.name]")
 				else
@@ -87,21 +90,59 @@
 				onclose(usr, "[P.name]")
 		else if(href_list["rename"])
 			var/obj/item/weapon/O = locate(href_list["rename"])
-			
+
 			if(O && (O.loc == src))
 				if(istype(O, /obj/item/weapon/paper))
 					var/obj/item/weapon/paper/to_rename = O
 					to_rename.rename()
-					
+
 				else if(istype(O, /obj/item/weapon/photo))
 					var/obj/item/weapon/photo/to_rename = O
 					to_rename.rename()
-					
+
 				else if(istype(O, /obj/item/weapon/paper_bundle))
 					var/obj/item/weapon/paper_bundle/to_rename = O
 					to_rename.rename()
-					
+
 		//Update everything
 		attack_self(usr)
 		update_icon()
 	return
+
+/obj/item/weapon/folder/envelope
+	name = "envelope"
+	desc = "A thick envelope. You can't see what's inside."
+	icon_state = "envelope_sealed"
+	var/sealed = 1
+
+/obj/item/weapon/folder/envelope/update_icon()
+	if(sealed)
+		icon_state = "envelope_sealed"
+	else
+		icon_state = "envelope[contents.len > 0]"
+
+/obj/item/weapon/folder/envelope/examine(var/user)
+	..()
+	to_chat(user, "The seal is [sealed ? "intact" : "broken"].")
+
+/obj/item/weapon/folder/envelope/proc/sealcheck(user)
+	var/ripperoni = alert("Are you sure you want to break the seal on \the [src]?", "Confirmation","Yes", "No")
+	if(ripperoni == "Yes")
+		visible_message("[user] breaks the seal on \the [src], and opens it.")
+		sealed = 0
+		update_icon()
+		return 1
+
+/obj/item/weapon/folder/envelope/attack_self(mob/user as mob)
+	if(sealed)
+		sealcheck(user)
+		return
+	else
+		..()
+
+/obj/item/weapon/folder/envelope/attackby(obj/item/weapon/W as obj, mob/user as mob)
+	if(sealed)
+		sealcheck(user)
+		return
+	else
+		..()

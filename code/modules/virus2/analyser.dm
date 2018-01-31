@@ -14,7 +14,7 @@
 	if(!istype(O,/obj/item/weapon/virusdish)) return
 
 	if(dish)
-		user << "\The [src] is already loaded."
+		to_chat(user, "\The [src] is already loaded.")
 		return
 
 	dish = O
@@ -23,7 +23,7 @@
 
 	user.visible_message("[user] adds \a [O] to \the [src]!", "You add \a [O] to \the [src]!")
 
-/obj/machinery/disease2/diseaseanalyser/process()
+/obj/machinery/disease2/diseaseanalyser/Process()
 	if(stat & (NOPOWER|BROKEN))
 		return
 

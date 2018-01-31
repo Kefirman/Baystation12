@@ -3,48 +3,9 @@
 #define GAME_STATE_PLAYING		3
 #define GAME_STATE_FINISHED		4
 
-// Security levels.
-#define SEC_LEVEL_GREEN 0
-#define SEC_LEVEL_BLUE  1
-#define SEC_LEVEL_RED   2
-#define SEC_LEVEL_DELTA 3
-
-#define BE_TRAITOR    0x1
-#define BE_OPERATIVE  0x2
-#define BE_CHANGELING 0x4
-#define BE_WIZARD     0x8
-#define BE_MALF       0x10
-#define BE_REV        0x20
-#define BE_ALIEN      0x40
-#define BE_AI         0x80
-#define BE_CULTIST    0x100
-#define BE_MONKEY     0x200
-#define BE_NINJA      0x400
-#define BE_RAIDER     0x800
-#define BE_PLANT      0x1000
-#define BE_MUTINEER   0x2000
-#define BE_PAI        0x4000
-
-var/list/be_special_flags = list(
-	"Traitor"          = BE_TRAITOR,
-	"Operative"        = BE_OPERATIVE,
-	"Changeling"       = BE_CHANGELING,
-	"Wizard"           = BE_WIZARD,
-	"Malf AI"          = BE_MALF,
-	"Revolutionary"    = BE_REV,
-	"Xenomorph"        = BE_ALIEN,
-	"Positronic Brain" = BE_AI,
-	"Cultist"          = BE_CULTIST,
-	"Monkey"           = BE_MONKEY,
-	"Ninja"            = BE_NINJA,
-	"Raider"           = BE_RAIDER,
-	"Diona"            = BE_PLANT,
-	"Mutineer"         = BE_MUTINEER,
-	"pAI"              = BE_PAI
-)
-
-#define IS_MODE_COMPILED(MODE) (ispath(text2path("/datum/game_mode/"+(MODE))))
-
+#define BE_PLANT "BE_PLANT"
+#define BE_SYNTH "BE_SYNTH"
+#define BE_PAI   "BE_PAI"
 
 // Antagonist datum flags.
 #define ANTAG_OVERRIDE_JOB        0x1 // Assigned job is set to MODE when spawning.
@@ -58,6 +19,7 @@ var/list/be_special_flags = list(
 #define ANTAG_RANDSPAWN         0x100 // Potentially randomly spawns due to events.
 #define ANTAG_VOTABLE           0x200 // Can be voted as an additional antagonist before roundstart.
 #define ANTAG_SET_APPEARANCE    0x400 // Causes antagonists to use an appearance modifier on spawn.
+#define ANTAG_RANDOM_EXCEPTED   0x800 // If a game mode randomly selects antag types, antag types with this flag should be excluded.
 
 // Mode/antag template macros.
 #define MODE_BORER "borer"
@@ -67,20 +29,24 @@ var/list/be_special_flags = list(
 #define MODE_COMMANDO "commando"
 #define MODE_DEATHSQUAD "deathsquad"
 #define MODE_ERT "ert"
+#define MODE_ACTOR "actor"
 #define MODE_MERCENARY "mercenary"
 #define MODE_NINJA "ninja"
 #define MODE_RAIDER "raider"
 #define MODE_WIZARD "wizard"
 #define MODE_CHANGELING "changeling"
 #define MODE_CULTIST "cultist"
-#define MODE_HIGHLANDER "highlander"
 #define MODE_MONKEY "monkey"
 #define MODE_RENEGADE "renegade"
 #define MODE_REVOLUTIONARY "revolutionary"
+#define MODE_LOYALIST "loyalist"
 #define MODE_MALFUNCTION "malf"
 #define MODE_TRAITOR "traitor"
+#define MODE_DEITY "deity"
+#define MODE_GODCULTIST "god cultist"
 
-#define DEFAULT_TELECRYSTAL_AMOUNT 12
+#define DEFAULT_TELECRYSTAL_AMOUNT 130
+#define IMPLANT_TELECRYSTAL_AMOUNT(x) (round(x * 0.49)) // If this cost is ever greater than half of DEFAULT_TELECRYSTAL_AMOUNT then it is possible to buy more TC than you spend
 
 /////////////////
 ////WIZARD //////
@@ -119,3 +85,8 @@ var/list/be_special_flags = list(
 #define Sp_RECHARGE	"recharge"
 #define Sp_CHARGES	"charges"
 #define Sp_HOLDVAR	"holdervar"
+
+#define INITIALIZATION_NOW 1
+#define INITIALIZATION_HAS_BEGUN 2
+#define INITIALIZATION_COMPLETE 4
+#define INITIALIZATION_NOW_AND_COMPLETE (INITIALIZATION_NOW|INITIALIZATION_COMPLETE)

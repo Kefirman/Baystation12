@@ -1,4 +1,6 @@
-//print an error message to world.log
+//wrapper macros for easier grepping
+#define DIRECT_OUTPUT(A, B) A << B
+#define WRITE_FILE(file, text) DIRECT_OUTPUT(file, text)
 
 
 // On Linux/Unix systems the line endings are LF, on windows it's CRLF, admins that don't use notepad++
@@ -9,81 +11,112 @@
 
 
 /proc/error(msg)
-	world.log << "## ERROR: [msg][log_end]"
+	to_world_log("## ERROR: [msg][log_end]")
 
 #define WARNING(MSG) warning("[MSG] in [__FILE__] at line [__LINE__] src: [src] usr: [usr].")
 //print a warning message to world.log
 /proc/warning(msg)
-	world.log << "## WARNING: [msg][log_end]"
+	to_world_log("## WARNING: [msg][log_end]")
 
 //print a testing-mode debug message to world.log
 /proc/testing(msg)
-	world.log << "## TESTING: [msg][log_end]"
+	to_world_log("## TESTING: [msg][log_end]")
+
+/proc/game_log(category, text)
+	diary << "\[[time_stamp()]] [game_id] [category]: [text][log_end]"
 
 /proc/log_admin(text)
-	admin_log.Add(text)
+	GLOB.admin_log.Add(text)
 	if (config.log_admin)
-		diary << "\[[time_stamp()]]ADMIN: [text][log_end]"
-
+		game_log("ADMIN", text)
 
 /proc/log_debug(text)
 	if (config.log_debug)
-		diary << "\[[time_stamp()]]DEBUG: [text][log_end]"
+		game_log("DEBUG", text)
+	to_debug_listeners(text)
 
-	for(var/client/C in admins)
-		if(C.prefs.toggles & CHAT_DEBUGLOGS)
-			C << "DEBUG: [text]"
+/proc/log_error(text)
+	error(text)
+	to_debug_listeners(text, "ERROR")
 
+/proc/log_warning(text)
+	warning(text)
+	to_debug_listeners(text, "WARNING")
+
+/proc/to_debug_listeners(text, prefix = "DEBUG")
+	for(var/client/C in GLOB.admins)
+		if(C.get_preference_value(/datum/client_preference/staff/show_debug_logs) == GLOB.PREF_SHOW)
+			to_chat(C, "[prefix]: [text]")
 
 /proc/log_game(text)
 	if (config.log_game)
-		diary << "\[[time_stamp()]]GAME: [text][log_end]"
+		game_log("GAME", text)
 
 /proc/log_vote(text)
 	if (config.log_vote)
-		diary << "\[[time_stamp()]]VOTE: [text][log_end]"
+		game_log("VOTE", text)
 
 /proc/log_access(text)
 	if (config.log_access)
-		diary << "\[[time_stamp()]]ACCESS: [text][log_end]"
+		game_log("ACCESS", text)
 
 /proc/log_say(text)
 	if (config.log_say)
-		diary << "\[[time_stamp()]]SAY: [text][log_end]"
+		game_log("SAY", text)
 
 /proc/log_ooc(text)
 	if (config.log_ooc)
-		diary << "\[[time_stamp()]]OOC: [text][log_end]"
+		game_log("OOC", text)
 
 /proc/log_whisper(text)
 	if (config.log_whisper)
-		diary << "\[[time_stamp()]]WHISPER: [text][log_end]"
+		game_log("WHISPER", text)
 
 /proc/log_emote(text)
 	if (config.log_emote)
-		diary << "\[[time_stamp()]]EMOTE: [text][log_end]"
+		game_log("EMOTE", text)
 
 /proc/log_attack(text)
 	if (config.log_attack)
-		diary << "\[[time_stamp()]]ATTACK: [text][log_end]" //Seperate attack logs? Why?  FOR THE GLORY OF SATAN!
+		game_log("ATTACK", text)
 
 /proc/log_adminsay(text)
 	if (config.log_adminchat)
-		diary << "\[[time_stamp()]]ADMINSAY: [text][log_end]"
+		game_log("ADMINSAY", text)
 
 /proc/log_adminwarn(text)
 	if (config.log_adminwarn)
-		diary << "\[[time_stamp()]]ADMINWARN: [text][log_end]"
+		game_log("ADMINWARN", text)
 
 /proc/log_pda(text)
 	if (config.log_pda)
-		diary << "\[[time_stamp()]]PDA: [text][log_end]"
+		game_log("PDA", text)
+
+/proc/log_to_dd(text)
+	to_world_log(text) //this comes before the config check because it can't possibly runtime
+	if(config.log_world_output)
+		game_log("DD_OUTPUT", text)
 
 /proc/log_misc(text)
-	diary << "\[[time_stamp()]]MISC: [text][log_end]"
+	game_log("MISC", text)
+
+/proc/log_unit_test(text)
+	to_world_log("## UNIT_TEST ##: [text]")
+	log_debug(text)
+
+/proc/log_qdel(text)
+	WRITE_FILE(GLOB.world_qdel_log, "\[[time_stamp()]]QDEL: [text]")
+
+//This replaces world.log so it displays both in DD and the file
+/proc/log_world(text)
+	if(config && config.log_runtime)
+		to_world_log(runtime_diary)
+		to_world_log(text)
+	to_world_log(null)
+	to_world_log(text)
 
 //pretty print a direction bitflag, can be useful for debugging.
-/proc/print_dir(var/dir)
+/proc/dir_text(var/dir)
 	var/list/comps = list()
 	if(dir & NORTH) comps += "NORTH"
 	if(dir & SOUTH) comps += "SOUTH"
@@ -91,11 +124,11 @@
 	if(dir & WEST) comps += "WEST"
 	if(dir & UP) comps += "UP"
 	if(dir & DOWN) comps += "DOWN"
-	
+
 	return english_list(comps, nothing_text="0", and_text="|", comma_text="|")
 
 //more or less a logging utility
-/proc/key_name(var/whom, var/include_link = null, var/include_name = 1, var/highlight_special_characters = 1)
+/proc/key_name(var/whom, var/include_link = null, var/include_name = 1, var/highlight_special_characters = 1, var/datum/ticket/ticket = null)
 	var/mob/M
 	var/client/C
 	var/key
@@ -125,12 +158,9 @@
 
 	if(key)
 		if(include_link && C)
-			. += "<a href='?priv_msg=\ref[C]'>"
+			. += "<a href='?priv_msg=\ref[C];ticket=\ref[ticket]'>"
 
-		if(C && C.holder && C.holder.fakekey && !include_name)
-			. += "Administrator"
-		else
-			. += key
+		. += key
 
 		if(include_link)
 			if(C)	. += "</a>"
@@ -148,7 +178,7 @@
 
 
 		if(include_link && is_special_character(M) && highlight_special_characters)
-			. += "/(<font color='#FFA500'>[name]</font>)" //Orange
+			. += "/(<font color='#ffa500'>[name]</font>)" //Orange
 		else
 			. += "/([name])"
 
@@ -156,3 +186,32 @@
 
 /proc/key_name_admin(var/whom, var/include_name = 1)
 	return key_name(whom, 1, include_name)
+
+// Helper procs for building detailed log lines
+/datum/proc/get_log_info_line()
+	return "[src] ([type]) ([any2ref(src)])"
+
+/area/get_log_info_line()
+	return "[..()] ([isnum(z) ? "[x],[y],[z]" : "0,0,0"])"
+
+/turf/get_log_info_line()
+	return "[..()] ([x],[y],[z]) ([loc ? loc.type : "NULL"])"
+
+/atom/movable/get_log_info_line()
+	var/turf/t = get_turf(src)
+	return "[..()] ([t ? t : "NULL"]) ([t ? "[t.x],[t.y],[t.z]" : "0,0,0"]) ([t ? t.type : "NULL"])"
+
+/mob/get_log_info_line()
+	return ckey ? "[..()] ([ckey])" : ..()
+
+/proc/log_info_line(var/datum/d)
+	if(isnull(d))
+		return "*null*"
+	if(islist(d))
+		var/list/L = list()
+		for(var/e in d)
+			L += log_info_line(e)
+		return "\[[jointext(L, ", ")]\]" // We format the string ourselves, rather than use json_encode(), because it becomes difficult to read recursively escaped "
+	if(!istype(d))
+		return json_encode(d)
+	return d.get_log_info_line()

@@ -9,7 +9,9 @@
 	name = "ultra rare hat"
 	desc = "an ultra rare hat. It commands a certain respect."
 	icon_state = "petehat"
-	sprite_sheets = list("Vox" = 'icons/mob/species/vox/head.dmi')
+	sprite_sheets = list(
+		SPECIES_VOX = 'icons/mob/species/vox/head.dmi',
+		)
 
 /obj/item/clothing/head/collectable/slime
 	name = "collectable slime cap!"
@@ -18,7 +20,7 @@
 	body_parts_covered = 0
 
 /obj/item/clothing/head/collectable/xenom
-	name = "collectable xenomorph helmet!"
+	name = "collectable alien monster helmet!"
 	desc = "Hiss hiss hiss!"
 	icon_state = "xenom"
 	item_state_slots = list(
@@ -74,6 +76,7 @@
 	desc = "A Collectable Welding Helmet. Now with 80% less lead! Not for actual welding. Any welding done while wearing this Helmet is done so at the owner's own risk!"
 	icon_state = "welding"
 	item_state = "welding"
+	w_class = ITEM_SIZE_NORMAL
 	body_parts_covered = HEAD|FACE|EYES
 
 /obj/item/clothing/head/collectable/slime
@@ -117,6 +120,7 @@
 	name = "collectable hard hat"
 	desc = "WARNING! Offers no real protection, or luminosity, but it is damn fancy!"
 	icon_state = "hardhat0_yellow"
+	w_class = ITEM_SIZE_NORMAL
 	body_parts_covered = 0
 
 /obj/item/clothing/head/collectable/HoS

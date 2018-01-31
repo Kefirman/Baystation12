@@ -1,3 +1,5 @@
+GLOBAL_DATUM_INIT(event_manager, /datum/event_manager, new)
+
 /datum/event_manager
 	var/window_x = 700
 	var/window_y = 600
@@ -23,14 +25,6 @@
 /datum/event_manager/New()
 	allEvents = typesof(/datum/event) - /datum/event
 
-/datum/event_manager/proc/process()
-	for(var/datum/event/E in event_manager.active_events)
-		E.process()
-
-	for(var/i = EVENT_LEVEL_MUNDANE to EVENT_LEVEL_MAJOR)
-		var/list/datum/event_container/EC = event_containers[i]
-		EC.process()
-
 /datum/event_manager/proc/event_complete(var/datum/event/E)
 	if(!E.event_meta || !E.severity)	// datum/event is used here and there for random reasons, maintaining "backwards compatibility"
 		log_debug("Event of '[E.type]' with missing meta-data has completed.")
@@ -44,7 +38,7 @@
 	if(EM.add_to_queue)
 		EC.available_events += EM
 
-	log_debug("Event '[EM.name]' has completed at [worldtime2text()].")
+	log_debug("Event '[EM.name]' has completed at [worldtime2stationtime(world.time)].")
 
 /datum/event_manager/proc/delay_events(var/severity, var/delay)
 	var/list/datum/event_container/EC = event_containers[severity]
@@ -62,21 +56,21 @@
 	if(!report_at_round_end)
 		return
 
-	world << "<br><br><br><font size=3><b>Random Events This Round:</b></font>"
+	to_world("<br><br><br><font size=3><b>Random Events This Round:</b></font>")
 	for(var/datum/event/E in active_events|finished_events)
 		var/datum/event_meta/EM = E.event_meta
 		if(EM.name == "Nothing")
 			continue
-		var/message = "'[EM.name]' began at [worldtime2text(E.startedAt)] "
+		var/message = "'[EM.name]' began at [worldtime2stationtime(E.startedAt)] "
 		if(E.isRunning)
 			message += "and is still running."
 		else
 			if(E.endedAt - E.startedAt > MinutesToTicks(5)) // Only mention end time if the entire duration was more than 5 minutes
-				message += "and ended at [worldtime2text(E.endedAt)]."
+				message += "and ended at [worldtime2stationtime(E.endedAt)]."
 			else
 				message += "and ran to completion."
 
-		world << message
+		to_world(message)
 
 /datum/event_manager/proc/GetInteractWindow()
 	var/html = "<A align='right' href='?src=\ref[src];refresh=1'>Refresh</A>"
@@ -130,7 +124,7 @@
 			var/next_event_at = max(0, EC.next_event_time - world.time)
 			html += "<tr>"
 			html += "<td>[severity_to_string[severity]]</td>"
-			html += "<td>[worldtime2text(max(EC.next_event_time, world.time))]</td>"
+			html += "<td>[worldtime2stationtime(max(EC.next_event_time, world.time))]</td>"
 			html += "<td>[round(next_event_at / 600, 0.1)]</td>"
 			html += "<td>"
 			html +=   "<A align='right' href='?src=\ref[src];dec_timer=2;event=\ref[EC]'>--</A>"
@@ -178,7 +172,7 @@
 			html += "<tr>"
 			html += "<td>[severity_to_string[EM.severity]]</td>"
 			html += "<td>[EM.name]</td>"
-			html += "<td>[worldtime2text(ends_at)]</td>"
+			html += "<td>[worldtime2stationtime(ends_at)]</td>"
 			html += "<td>[ends_in]</td>"
 			html += "<td><A align='right' href='?src=\ref[src];stop=\ref[E]'>Stop</A></td>"
 			html += "</tr>"
@@ -280,11 +274,12 @@
 		var/datum/event_container/EC = locate(href_list["clear"])
 		if(EC.next_event)
 			log_and_message_admins("has dequeued the [severity_to_string[EC.severity]] event '[EC.next_event.name]'.")
+			EC.available_events += EC.next_event
 			EC.next_event = null
 
 	Interact(usr)
 
-/client/proc/forceEvent(var/type in event_manager.allEvents)
+/client/proc/forceEvent(var/type in GLOB.event_manager.allEvents)
 	set name = "Trigger Event (Debug Only)"
 	set category = "Debug"
 
@@ -298,7 +293,7 @@
 /client/proc/event_manager_panel()
 	set name = "Event Manager Panel"
 	set category = "Admin"
-	if(event_manager)
-		event_manager.Interact(usr)
+	if(GLOB.event_manager)
+		GLOB.event_manager.Interact(usr)
 	feedback_add_details("admin_verb","EMP") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 	return

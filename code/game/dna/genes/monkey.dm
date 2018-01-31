@@ -2,7 +2,7 @@
 	name="Monkey"
 
 /datum/dna/gene/monkey/New()
-	block=MONKEYBLOCK
+	block=GLOB.MONKEYBLOCK
 
 /datum/dna/gene/monkey/can_activate(var/mob/M,var/flags)
 	return istype(M, /mob/living/carbon/human) || istype(M,/mob/living/carbon/monkey)
@@ -26,7 +26,7 @@
 		M.transforming = 1
 		M.canmove = 0
 		M.icon = null
-		M.invisibility = 101
+		M.set_invisibility(101)
 		var/atom/movable/overlay/animation = new( M.loc )
 		animation.icon_state = "blank"
 		animation.icon = 'icons/mob/mob.dmi'
@@ -76,10 +76,10 @@
 	O.take_overall_damage(M.getBruteLoss() + 40, M.getFireLoss())
 	O.adjustToxLoss(M.getToxLoss() + 20)
 	O.adjustOxyLoss(M.getOxyLoss())
-	O.stat = M.stat
+	O.set_stat(M.stat)
 	O.a_intent = I_HURT
 	for (var/obj/item/weapon/implant/I in implants)
-		I.loc = O
+		I.forceMove(O)
 		I.implanted = O
 //		O.update_icon = 1	//queue a full icon update at next life() call
 	qdel(M)
@@ -101,7 +101,7 @@
 		M.transforming = 1
 		M.canmove = 0
 		M.icon = null
-		M.invisibility = 101
+		M.set_invisibility(101)
 		var/atom/movable/overlay/animation = new( M.loc )
 		animation.icon_state = "blank"
 		animation.icon = 'icons/mob/mob.dmi'
@@ -166,9 +166,9 @@
 	O.take_overall_damage(M.getBruteLoss(), M.getFireLoss())
 	O.adjustToxLoss(M.getToxLoss())
 	O.adjustOxyLoss(M.getOxyLoss())
-	O.stat = M.stat
+	O.set_stat(M.stat)
 	for (var/obj/item/weapon/implant/I in implants)
-		I.loc = O
+		I.forceMove(O)
 		I.implanted = O
 //		O.update_icon = 1	//queue a full icon update at next life() call
 	qdel(M)

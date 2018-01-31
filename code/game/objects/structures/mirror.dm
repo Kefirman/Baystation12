@@ -30,10 +30,8 @@
 
 
 /obj/structure/mirror/bullet_act(var/obj/item/projectile/Proj)
-	if(!(Proj.damage_type == BRUTE || Proj.damage_type == BURN))
-		return
 
-	if(prob(Proj.damage * 2))
+	if(prob(Proj.get_structure_damage() * 2))
 		if(!shattered)
 			shatter()
 		else
@@ -53,8 +51,7 @@
 		playsound(src.loc, 'sound/effects/Glasshit.ogg', 70, 1)
 
 /obj/structure/mirror/attack_generic(var/mob/user, var/damage)
-
-	user.do_attack_animation(src)
+	attack_animation(user)
 	if(shattered)
 		playsound(src.loc, 'sound/effects/hit_on_shattered_glass.ogg', 70, 1)
 		return 0
@@ -66,6 +63,13 @@
 		user.visible_message("<span class='danger'>[user] hits [src] and bounces off!</span>")
 	return 1
 
+/obj/structure/mirror/Destroy()
+	for(var/user in ui_users)
+		var/datum/nano_module/appearance_changer/AC = ui_users[user]
+		qdel(AC)
+	ui_users.Cut()
+	..()
+
 // The following mirror is ~special~.
 /obj/structure/mirror/raider
 	name = "cracked mirror"
@@ -75,10 +79,10 @@
 
 /obj/structure/mirror/raider/attack_hand(var/mob/living/carbon/human/user)
 	if(istype(get_area(src),/area/syndicate_mothership))
-		if(istype(user) && user.mind && user.mind.special_role == "Raider" && user.species.name != "Vox" && is_alien_whitelisted(user, "Vox"))
+		if(istype(user) && user.mind && user.mind.special_role == "Raider" && user.species.name != SPECIES_VOX && is_alien_whitelisted(user, SPECIES_VOX))
 			var/choice = input("Do you wish to become a true Vox of the Shoal? This is not reversible.") as null|anything in list("No","Yes")
 			if(choice && choice == "Yes")
-				var/mob/living/carbon/human/vox/vox = new(get_turf(src),"Vox")
+				var/mob/living/carbon/human/vox/vox = new(get_turf(src),SPECIES_VOX)
 				vox.gender = user.gender
 				raiders.equip(vox)
 				if(user.mind)
@@ -92,4 +96,28 @@
 					vox.name = vox.real_name
 					raiders.update_access(vox)
 				qdel(user)
+	..()
+
+/obj/item/weapon/mirror
+	name = "mirror"
+	desc = "A SalonPro Nano-Mirror(TM) brand mirror! Now a portable version."
+	icon = 'icons/obj/items.dmi'
+	icon_state = "mirror"
+	var/list/ui_users = list()
+
+/obj/item/weapon/mirror/attack_self(mob/user as mob)
+	if(ishuman(user))
+		var/datum/nano_module/appearance_changer/AC = ui_users[user]
+		if(!AC)
+			AC = new(src, user)
+			AC.name = "SalonPro Nano-Mirror&trade;"
+			AC.flags = APPEARANCE_HAIR
+			ui_users[user] = AC
+		AC.ui_interact(user)
+
+/obj/item/weapon/mirror/Destroy()
+	for(var/user in ui_users)
+		var/datum/nano_module/appearance_changer/AC = ui_users[user]
+		qdel(AC)
+	ui_users.Cut()
 	..()

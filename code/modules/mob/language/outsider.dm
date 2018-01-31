@@ -1,17 +1,18 @@
 /datum/language/xenocommon
-	name = "Xenomorph"
+	name = "Xenophage"
 	colour = "alien"
-	desc = "The common tongue of the xenomorphs."
+	desc = "The common tongue of the xenophages."
 	speech_verb = "hisses"
 	ask_verb = "hisses"
 	exclaim_verb = "hisses"
 	key = "4"
 	flags = RESTRICTED
 	syllables = list("sss","sSs","SSS")
+	machine_understands = 0
 
 /datum/language/xenos
 	name = "Hivemind"
-	desc = "Xenomorphs have the strange ability to commune over a psychic hivemind."
+	desc = "Xenophages have the strange ability to commune over a psychic hivemind."
 	speech_verb = "hisses"
 	ask_verb = "hisses"
 	exclaim_verb = "hisses"
@@ -24,7 +25,7 @@
 	var/mob/living/carbon/M = other
 	if(!istype(M))
 		return 1
-	if(locate(/obj/item/organ/xenos/hivenode) in M.internal_organs)
+	if(locate(/obj/item/organ/internal/xenos/hivenode) in M.internal_organs)
 		return 1
 
 	return 0
@@ -79,18 +80,19 @@
 	flags = WHITELISTED
 	syllables = list("ti","ti","ti","hi","hi","ki","ki","ki","ki","ya","ta","ha","ka","ya","chi","cha","kah", \
 	"SKRE","AHK","EHK","RAWK","KRA","AAA","EEE","KI","II","KRI","KA")
+	machine_understands = 0
 
 /datum/language/vox/get_random_name()
 	return ..(FEMALE,1,6)
 
 /datum/language/cultcommon
-	name = "Cult"
+	name = LANGUAGE_CULT
 	desc = "The chants of the occult, the incomprehensible."
 	speech_verb = "intones"
 	ask_verb = "intones"
 	exclaim_verb = "chants"
 	colour = "cult"
-	key = "n"
+	key = "f"
 	flags = RESTRICTED
 	space_chance = 100
 	syllables = list("ire","ego","nahlizet","certum","veri","jatkaa","mgar","balaq", "karazet", "geeri", \
@@ -100,6 +102,7 @@
 		"sektath", "mal'zua", "zasan", "therium", "viortia", "kla'atu", "barada", "nikt'o", "fwe'sh", "mah", "erl", "nyag", "r'ya", \
 		"gal'h'rfikk", "harfrandid", "mud'gib", "fuu", "ma'jin", "dedo", "ol'btoh", "n'ath", "reth", "sh'yro", "eth", \
 		"d'rekkathnor", "khari'd", "gual'te", "nikka", "nikt'o", "barada", "kla'atu", "barhah", "hra" ,"zar'garis")
+	machine_understands = 0
 
 /datum/language/cult
 	name = "Occult"
@@ -108,5 +111,19 @@
 	ask_verb = "intones"
 	exclaim_verb = "chants"
 	colour = "cult"
-	key = "m"
+	key = "y"
 	flags = RESTRICTED | HIVEMIND
+
+/datum/language/bogani
+	name = LANGUAGE_BOGANI
+	colour = "alien"
+	desc = "The language of the Bogani"
+	speech_verb = "gurgles"
+	ask_verb = "gurgles"
+	exclaim_verb = "wails"
+	key = "i"
+	flags = RESTRICTED
+	syllables = list("qy","bok","mok","yok","dy","gly","ryl","byl","dok","paj","kaj","wok","wyl","zak","qum","gyh","thj","qpo","basb","ies","niii",
+	"eri","erk","eok","eyl","yyl","hyk","qyb","eon","gni","shaf","bissna","goqqo","xokj","wej","nym","assah","qwssa","nieasl","qyno","shaffar",
+	"egyno","bogani","voijs","nekks","bollos","qoulsan","borrksakja","neemen","aka","nikka","qyegno","shafra","beolas","Byno")
+	machine_understands = 0
