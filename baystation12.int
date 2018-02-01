@@ -1,6 +1,11 @@
 // BEGIN_INTERNALS
 /*
-MAP_ICON_TYPE: 0
+LAST_COMPILE_TIME: 1517433809
+DIR: maps 
 AUTO_FILE_DIR: OFF
+MAP_ICON_TYPE: 0
+LAST_COMPILE_VERSION: 511.1380
+WINDOW: code\__HELPERS\text.dm;code\game\machinery\computer\supply.dm;maps\exodus-5.dmm;maps\exodus-6.dmm
+FILE: maps\exodus-6.dmm
 */
 // END_INTERNALS

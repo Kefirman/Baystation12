@@ -175,10 +175,10 @@
  * Text modification
  */
 
-/proc/replacetext(text, find, replacement)
+/proc/replacetext1(text, find, replacement)
 	return list2text(text2list(text, find), replacement)
 
-/proc/replacetextEx(text, find, replacement)
+/proc/replacetextEx1(text, find, replacement)
 	return list2text(text2listEx(text, find), replacement)
 
 /proc/replace_characters(var/t,var/list/repl_chars)
